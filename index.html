@@ -197,116 +197,41 @@
     z-index: 10;
   }
   .menu-btn:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.3);}
+  
+  .menu-img-btn{
+    position:absolute; left:20px; cursor:pointer; border:none; background:none;
+    padding:0; display:flex; align-items:center; justify-content:center;
+    z-index: 10;
+  }
+  
+  .menu-img-btn img{
+    width:120px; height:auto; border-radius:14px;
+    box-shadow:0 4px 0 rgba(0,0,0,0.3); transition:transform 0.1s;
+  }
+  
+  .menu-img-btn:active img{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.3);}
+  
+  #shop-btn{bottom:420px;}
+  #characters-btn{bottom:350px;}
+  #brawl-pass-menu-btn{bottom:280px;}
 
 </style>
 </head>
 <body>
 
-<!-- Loading scene -->
-<div id="loading-scene">
-  <div id="progress-wrap"><div id="progress-bar"></div></div>
-</div>
-
-<!-- Nickname scene -->
-<div id="nickname-scene">
-  <h2>Введіть ім'я гравця</h2>
-  <input id="nickname-input" type="text" placeholder="Назва">
-  <button id="continue-btn">Продовжити</button>
-</div>
-
-<!-- Menu scene -->
-<div id="menu-scene">
-  <div class="top-bar">
-    <div class="nickname" id="nickname-display">Гравець</div>
-    <div class="right-part">
-      <div class="currency trophy">
-        <span id="trophy-display">0</span>
-        <img src="Img/trophy_icon.png" alt="Trophy">
-      </div>
-      <button class="settings-btn" id="settings-btn" title="Налаштування">⚙️</button>
-    </div>
-  </div>
-  
-  <img id="character" src="Img/character_default.png" alt="Character">
-  
-  <div id="daily-rewards"></div>
-  
-  <div id="bottom-controls">
-    <button class="play-btn" id="play-btn">ГРАТИ</button>
-    <div class="mode-box" id="mode-select" title="Режим гри">
-      <img src="Img/mode_icon.png" alt="Mode">
-    </div>
-  </div>
-</div>
-
 <script>
-  // === КОНФІГ ===
-  const CONFIG = {
-    MAX_TROPHIES: 14500,
-    TROPHIES_PER_GAME: 10
-  };
-
-  // === СТАН ===
-  let gameState = {
-    nickname: 'Гравець',
-    trophies: 0,
-    coins: 0
-  };
-
-  // === ЗБЕРІГАННЯ ===
-  function saveGame() {
-    localStorage.setItem('gameState', JSON.stringify(gameState));
-  }
-
-  function loadGame() {
-    const saved = localStorage.getItem('gameState');
-    if (saved) gameState = JSON.parse(saved);
-    updateUI();
-  }
-
-  // === ОНОВЛЕННЯ ІНТЕРФЕЙСУ ===
-  function updateUI() {
-    document.getElementById('nickname-display').textContent = gameState.nickname;
-    document.getElementById('trophy-display').textContent = gameState.trophies.toLocaleString('uk-UA');
-  }
-
-  function addTrophies(amount) {
-    gameState.trophies = Math.min(gameState.trophies + amount, CONFIG.MAX_TROPHIES);
-    updateUI();
-    saveGame();
-  }
-
-  // === СОБЫТИЯ ===
-  document.getElementById('continue-btn').addEventListener('click', () => {
-    const nickname = document.getElementById('nickname-input').value.trim();
-    if (nickname) {
-      gameState.nickname = nickname;
-      document.getElementById('nickname-scene').style.display = 'none';
-      document.getElementById('menu-scene').style.display = 'block';
-      updateUI();
-      saveGame();
-    }
-  });
-
-  document.getElementById('play-btn').addEventListener('click', () => {
-    addTrophies(CONFIG.TROPHIES_PER_GAME);
-    alert(`+${CONFIG.TROPHIES_PER_GAME} трофеїв!\nВсього: ${gameState.trophies}/${CONFIG.MAX_TROPHIES}`);
-  });
-
-  // === ІНІЦІАЛІЗАЦІЯ ===
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      document.getElementById('loading-scene').style.display = 'none';
-      loadGame();
-      
-      // Якщо перший раз — показати введення імені
-      if (!localStorage.getItem('gameState')) {
-        document.getElementById('nickname-scene').style.display = 'flex';
-      } else {
-        document.getElementById('menu-scene').style.display = 'block';
-      }
-    }, 1000);
-  });
+  // Завантажуємо оригінальний файл
+  fetch('https://raw.githubusercontent.com/haha1488top-source/brawl-simulator-ua/4048e8717baef1d86372e970de2108cff41906cf/index.html')
+    .then(r => r.text())
+    .then(html => {
+      // Замінюємо посилання на музику
+      html = html.replace(/Snd\/brawzaar menu 01\.wav/g, 'Snd/brawzaarmenu01.mp3');
+      // Змінюємо max трофеїв на 14500
+      html = html.replace(/MAX_TROPHIES\s*:\s*\d+/g, 'MAX_TROPHIES: 14500');
+      // Вставляємо змінений HTML
+      document.write(html);
+      document.close();
+    });
 </script>
 
 </body>
