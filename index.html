@@ -4,30 +4,309 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Гра — Ловля монет</title>
-<link rel="stylesheet" href="style.css">
 <style>
   :root{
     --gold: #ffbf00;
     --green1: #00c853;
     --green2: #008000;
+    --common: #b0b0b0;
+    --rare: #4a86e8;
+    --super-rare: #8e7cc3;
+    --epic: #c27ba0;
+    --mythic: #9c27b0;
+    --legendary: #ff9900;
+    --chromatic: #e91e63;
+    --trophy: #ffd700;
+    --star: #ff4081;
+    --new-year: #ff0000;
+    --snow: #e0f7fa;
   }
-  *{box-sizing:border-box; margin:0; padding:0;}
-  html,body{height:100%; width:100%; overflow:hidden; font-family:"Segoe UI",sans-serif; background:#0a7b0a;}
+
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%; width:100%; overflow:hidden; font-family:"Segoe UI",Roboto,sans-serif; background:#0a7b0a; touch-action:none;}
+
+  /* --- Loading scene --- */
+  #loading-scene{
+    position:fixed; inset:0;
+    background:url('Img/loading_2020_tara_bazaar.png') center/cover no-repeat;
+    display:flex; align-items:flex-end; justify-content:center;
+    z-index:50;
+  }
+  #progress-wrap{
+    width:82%; max-width:900px; height:20px; margin-bottom:48px;
+    background:rgba(255,255,255,0.25); border-radius:12px; overflow:hidden;
+    box-shadow:0 3px 8px rgba(0,0,0,0.35) inset;
+  }
+  #progress-bar{
+    width:0%; height:100%;
+    background:linear-gradient(90deg,#7fff7f,#00a000);
+    transition:width 0.12s linear;
+  }
+
+  /* --- Nickname scene --- */
+  #nickname-scene{
+    position:fixed; inset:0; display:none;
+    background:#f5fbff; align-items:center; justify-content:center; flex-direction:column;
+    gap:18px;
+  }
+  #nickname-scene h2{font-size:22px; color:#0b3a3a;}
+  #nickname-input{
+    padding:10px 18px; font-size:18px; border-radius:10px; width:78%; max-width:420px;
+    border:2px solid #9bd6ff; outline:none; text-align:center; background:#fff;
+  }
+  #continue-btn{
+    padding:10px 36px; font-size:18px; border-radius:10px; cursor:pointer;
+    background:linear-gradient(to bottom,#00a8ff,#0078c2); color:#fff; border:none;
+    box-shadow:0 4px 0 rgba(0,0,0,0.15);
+  }
+
+  /* --- Menu scene --- */
+  #menu-scene{
+    position:fixed; inset:0; display:none;
+    background:url('Img/sandsoftime_lobby.png') center/cover no-repeat;
+    overflow:hidden;
+  }
+
+  /* Top bar */
+  .top-bar{
+    position:absolute; top:10px; left:12px; right:12px;
+    display:flex; align-items:center; justify-content:space-between;
+    z-index: 20;
+  }
+  .nickname{
+    font-size:26px; font-weight:800; color:#fff; text-shadow:2px 2px 4px rgba(0,0,0,0.7);
+  }
+  .right-part{
+    display:flex;
+    align-items:center;
+    gap:12px;
+  }
+  .currency{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    background:rgba(0,0,0,0.45);
+    padding:6px 10px;
+    border-radius:14px;
+    color:#fff;
+    font-weight:700;
+    font-size:16px;
+    cursor:pointer;
+    transition:transform 0.2s;
+  }
+  .currency:hover{
+    transform:scale(1.05);
+  }
+  .currency img{width:26px; height:26px;}
+
+  /* Trophy style */
+  .trophy{
+    background:rgba(0,0,0,0.45);
+    border:2px solid var(--trophy);
+  }
+
+  /* Settings button */
+  .settings-btn{
+    background:rgba(0,0,0,0.45);
+    padding:8px;
+    border-radius:50%;
+    color:#fff;
+    font-size:20px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:40px;
+    height:40px;
+    border:2px solid var(--gold);
+  }
+
+  /* Character */
+  #character{
+    position:absolute; left:50%; transform:translateX(-50%); top:34%;
+    width:220px; height:220px; object-fit:contain;
+    z-index: 10;
+  }
+
+  /* Rewards */
+  #daily-rewards{
+    position:absolute; left:50%; transform:translateX(-50%);
+    bottom:170px; display:flex; gap:12px; align-items:center;
+    z-index: 10;
+  }
+  .reward{
+    width:64px; height:64px; border-radius:12px;
+    border:3px solid var(--gold); background:rgba(255,215,0,0.10);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 8px rgba(0,0,0,0.25);
+    position: relative;
+  }
+  .reward img{width:56px; height:56px;}
+  
+  .reward.claimed{
+    border:3px solid #666; background:rgba(100,100,100,0.2); filter:grayscale(1);
+  }
+  
+  /* Загальний таймер для всіх скринь */
+  #global-timer-container{
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.7);
+    padding: 5px 15px;
+    border-radius: 10px;
+    border: 2px solid var(--gold);
+    display: none;
+    z-index: 10;
+  }
+  
+  #global-timer{
+    font-size: 14px;
+    color: #fff;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+    white-space: nowrap;
+  }
+
+  /* Bottom controls */
+  #bottom-controls{
+    position:absolute; left:50%; transform:translateX(-50%); bottom:64px;
+    display:flex; align-items:center; gap:22px;
+    z-index: 10;
+  }
+  .play-btn{
+    padding:12px 44px; font-size:20px; font-weight:800; color:#fff;
+    background:linear-gradient(to bottom,var(--green1),var(--green2));
+    border-radius:14px; border:3px solid #ffb347; cursor:pointer;
+    box-shadow:0 6px 0 rgba(0,0,0,0.24);
+  }
+  .mode-box{
+    width:64px; height:64px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    border:3px solid var(--gold); background:rgba(0,0,0,0.16); cursor:pointer;
+  }
+  .mode-box img{width:44px; height:44px;}
+
+  /* Menu buttons */
+  .menu-btn{
+    position:absolute; left:20px; padding:8px 22px; font-size:16px; font-weight:700;
+    background:linear-gradient(to bottom,#ffcc33,#ff9900);
+    border:3px solid #ffea00; border-radius:14px; color:#fff; 
+    text-shadow:1px 1px 2px rgba(0,0,0,0.6); box-shadow:0 4px 0 rgba(0,0,0,0.3);
+    cursor:pointer;
+    z-index: 10;
+  }
+  .menu-btn:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.3);}
+
 </style>
 </head>
 <body>
 
+<!-- Loading scene -->
+<div id="loading-scene">
+  <div id="progress-wrap"><div id="progress-bar"></div></div>
+</div>
+
+<!-- Nickname scene -->
+<div id="nickname-scene">
+  <h2>Введіть ім'я гравця</h2>
+  <input id="nickname-input" type="text" placeholder="Назва">
+  <button id="continue-btn">Продовжити</button>
+</div>
+
+<!-- Menu scene -->
+<div id="menu-scene">
+  <div class="top-bar">
+    <div class="nickname" id="nickname-display">Гравець</div>
+    <div class="right-part">
+      <div class="currency trophy">
+        <span id="trophy-display">0</span>
+        <img src="Img/trophy_icon.png" alt="Trophy">
+      </div>
+      <button class="settings-btn" id="settings-btn" title="Налаштування">⚙️</button>
+    </div>
+  </div>
+  
+  <img id="character" src="Img/character_default.png" alt="Character">
+  
+  <div id="daily-rewards"></div>
+  
+  <div id="bottom-controls">
+    <button class="play-btn" id="play-btn">ГРАТИ</button>
+    <div class="mode-box" id="mode-select" title="Режим гри">
+      <img src="Img/mode_icon.png" alt="Mode">
+    </div>
+  </div>
+</div>
+
 <script>
-  // Завантажуємо оригінальний файл
-  fetch('https://raw.githubusercontent.com/haha1488top-source/brawl-simulator-ua/4048e8717baef1d86372e970de2108cff41906cf/index.html')
-    .then(r => r.text())
-    .then(html => {
-      // Замінюємо посилання на музику
-      html = html.replace(/Snd\/brawzaar menu 01\.wav/g, 'Snd/brawzaarmenu01.mp3');
-      // Вставляємо змінений HTML
-      document.write(html);
-      document.close();
-    });
+  // === КОНФІГ ===
+  const CONFIG = {
+    MAX_TROPHIES: 14500,
+    TROPHIES_PER_GAME: 10
+  };
+
+  // === СТАН ===
+  let gameState = {
+    nickname: 'Гравець',
+    trophies: 0,
+    coins: 0
+  };
+
+  // === ЗБЕРІГАННЯ ===
+  function saveGame() {
+    localStorage.setItem('gameState', JSON.stringify(gameState));
+  }
+
+  function loadGame() {
+    const saved = localStorage.getItem('gameState');
+    if (saved) gameState = JSON.parse(saved);
+    updateUI();
+  }
+
+  // === ОНОВЛЕННЯ ІНТЕРФЕЙСУ ===
+  function updateUI() {
+    document.getElementById('nickname-display').textContent = gameState.nickname;
+    document.getElementById('trophy-display').textContent = gameState.trophies.toLocaleString('uk-UA');
+  }
+
+  function addTrophies(amount) {
+    gameState.trophies = Math.min(gameState.trophies + amount, CONFIG.MAX_TROPHIES);
+    updateUI();
+    saveGame();
+  }
+
+  // === СОБЫТИЯ ===
+  document.getElementById('continue-btn').addEventListener('click', () => {
+    const nickname = document.getElementById('nickname-input').value.trim();
+    if (nickname) {
+      gameState.nickname = nickname;
+      document.getElementById('nickname-scene').style.display = 'none';
+      document.getElementById('menu-scene').style.display = 'block';
+      updateUI();
+      saveGame();
+    }
+  });
+
+  document.getElementById('play-btn').addEventListener('click', () => {
+    addTrophies(CONFIG.TROPHIES_PER_GAME);
+    alert(`+${CONFIG.TROPHIES_PER_GAME} трофеїв!\nВсього: ${gameState.trophies}/${CONFIG.MAX_TROPHIES}`);
+  });
+
+  // === ІНІЦІАЛІЗАЦІЯ ===
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      document.getElementById('loading-scene').style.display = 'none';
+      loadGame();
+      
+      // Якщо перший раз — показати введення імені
+      if (!localStorage.getItem('gameState')) {
+        document.getElementById('nickname-scene').style.display = 'flex';
+      } else {
+        document.getElementById('menu-scene').style.display = 'block';
+      }
+    }, 1000);
+  });
 </script>
 
 </body>
