@@ -4,7 +4,6 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Гра — Ловля монет</title>
-<link rel="stylesheet" href="minutes.css">
 <style>
   :root{
     --gold: #ffbf00;
@@ -220,37 +219,8 @@
 </head>
 <body>
 
-<!-- Технічна перерва -->
-<div id="maintenance-scene">
-  <h1>⚙️ ТЕХНІЧНІ РОБОТИ</h1>
-  <p>Гра тимчасово на обслуговуванні. Будь ласка, спробуйте пізніше!</p>
-  
-  <div class="maintenance-table">
-    <div class="maintenance-item">
-      <div class="maintenance-item-label">Статус</div>
-      <div class="maintenance-item-value">🔧 В процесі</div>
-    </div>
-    <div class="maintenance-item">
-      <div class="maintenance-item-label">Час готовності</div>
-      <div class="maintenance-item-value">~2 години</div>
-    </div>
-  </div>
-
-  <div class="maintenance-progress">
-    <div class="maintenance-progress-fill"></div>
-  </div>
-
-  <button class="refresh-btn" onclick="location.reload()">🔄 Оновити</button>
-</div>
-
-<div id="loading-scene">
-  <div id="progress-wrap">
-    <div id="progress-bar"></div>
-  </div>
-</div>
-
 <script>
-  // Перехоплюємо fetch для завантаження оригінального HTML
+  // Завантажуємо оригінальний файл
   fetch('https://raw.githubusercontent.com/haha1488top-source/brawl-simulator-ua/4048e8717baef1d86372e970de2108cff41906cf/index.html')
     .then(r => r.text())
     .then(html => {
@@ -258,50 +228,10 @@
       html = html.replace(/Snd\/brawzaar menu 01\.wav/g, 'Snd/brawzaarmenu01.mp3');
       // Змінюємо max трофеїв на 14500
       html = html.replace(/MAX_TROPHIES\s*:\s*\d+/g, 'MAX_TROPHIES: 14500');
-      
-      // Парсимо HTML
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
-      // Шукаємо всі скрипти та стилі з оригіналу
-      const scripts = doc.querySelectorAll('script');
-      const styles = doc.querySelectorAll('style');
-      
-      // Додаємо скрипти
-      scripts.forEach(script => {
-        const newScript = document.createElement('script');
-        newScript.textContent = script.textContent;
-        newScript.src = script.src;
-        document.body.appendChild(newScript);
-      });
-      
-      // Додаємо додаткові стилі до head
-      styles.forEach(style => {
-        const newStyle = document.createElement('style');
-        newStyle.textContent = style.textContent;
-        document.head.appendChild(newStyle);
-      });
-      
-      // Перемішуємо сцени в body (але НЕ перезаписуємо весь HTML)
-      const maintenanceScene = document.getElementById('maintenance-scene');
-      const loadingScene = document.getElementById('loading-scene');
-      
-      // Видаляємо сцени з місця
-      maintenanceScene.remove();
-      loadingScene.remove();
-      
-      // Вставляємо всі елементи з оригіналу в body
-      doc.body.innerHTML.split('<').slice(1).forEach((el, i) => {
-        if (!el.includes('maintenance') && !el.includes('loading')) {
-          document.body.innerHTML += '<' + el;
-        }
-      });
-      
-      // Повертаємо сцени в кінець body
-      document.body.appendChild(maintenanceScene);
-      document.body.appendChild(loadingScene);
-    })
-    .catch(err => console.error('Помилка завантаження:', err));
+      // Вставляємо змінений HTML
+      document.write(html);
+      document.close();
+    });
 </script>
 
 </body>
