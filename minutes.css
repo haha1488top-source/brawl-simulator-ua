@@ -194,7 +194,7 @@
 
 /* Вимкнути технічну перерву (гра запуститься) */
 .maintenance-inactive #maintenance-scene {
-  display: none !important;
+  display: flex !important;
 }
 
 /* ==========================================
