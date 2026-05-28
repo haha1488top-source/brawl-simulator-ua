@@ -4,6 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Гра — Ловля монет</title>
+<link rel="stylesheet" href="minutes.css">
 <style>
   :root{
     --gold: #ffbf00;
@@ -218,6 +219,29 @@
 </style>
 </head>
 <body>
+
+<!-- Технічна перерва -->
+<div id="maintenance-scene">
+  <h1>⚙️ ТЕХНІЧНІ РОБОТИ</h1>
+  <p>Гра тимчасово на обслуговуванні. Будь ласка, спробуйте пізніше!</p>
+  
+  <div class="maintenance-table">
+    <div class="maintenance-item">
+      <div class="maintenance-item-label">Статус</div>
+      <div class="maintenance-item-value">🔧 В процесі</div>
+    </div>
+    <div class="maintenance-item">
+      <div class="maintenance-item-label">Час готовності</div>
+      <div class="maintenance-item-value">~2 години</div>
+    </div>
+  </div>
+
+  <div class="maintenance-progress">
+    <div class="maintenance-progress-fill"></div>
+  </div>
+
+  <button class="refresh-btn" onclick="location.reload()">🔄 Оновити</button>
+</div>
 
 <script>
   // Завантажуємо оригінальний файл
