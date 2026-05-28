@@ -3,7 +3,8 @@
    ========================================== */
 
 :root {
-  --maintenance-display: flex; /* flex - показувати, none - грати */
+  /* Змініть flex на none для відключення перерви */
+  --maintenance-display: flex;
 }
 
 /* --- Контейнер технічної перерви --- */
@@ -179,26 +180,7 @@
 }
 
 /* ==========================================
-   РЕЖИМИ ВІДОБРАЖЕННЯ
-   ========================================== */
-
-/* Включити технічну перерву */
-.maintenance-active #maintenance-scene {
-  display: var(--maintenance-display);
-}
-
-.maintenance-active #menu-scene,
-.maintenance-active #game-scene {
-  display: none !important;
-}
-
-/* Вимкнути технічну перерву (гра запуститься) */
-.maintenance-inactive #maintenance-scene {
-  display: flex !important;
-}
-
-/* ==========================================
-   Адаптивність
+   АДАПТИВНІСТЬ
    ========================================== */
 
 @media (max-width: 768px) {
