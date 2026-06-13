@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="uk">
 <head>
@@ -25,7 +26,7 @@
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
   html,body{height:100%; width:100%; overflow:hidden; font-family:"Segoe UI",Roboto,sans-serif; background:#0a7b0a; touch-action:none;}
 
-  /* --- Loading scene --- */
+  /* Loading scene */
   #loading-scene{
     position:fixed; inset:0;
     background:url('Img/loading_2020_tara_bazaar.png') center/cover no-repeat;
@@ -43,7 +44,7 @@
     transition:width 0.12s linear;
   }
 
-  /* --- Nickname scene --- */
+  /* Nickname scene */
   #nickname-scene{
     position:fixed; inset:0; display:none;
     background:#f5fbff; align-items:center; justify-content:center; flex-direction:column;
@@ -60,14 +61,13 @@
     box-shadow:0 4px 0 rgba(0,0,0,0.15);
   }
 
-  /* --- Menu scene --- */
+  /* Menu scene */
   #menu-scene{
     position:fixed; inset:0; display:none;
     background:url('Img/sandsoftime_lobby.png') center/cover no-repeat;
     overflow:hidden;
   }
 
-  /* Top bar */
   .top-bar{
     position:absolute; top:10px; left:12px; right:12px;
     display:flex; align-items:center; justify-content:space-between;
@@ -99,13 +99,11 @@
   }
   .currency img{width:26px; height:26px;}
 
-  /* Trophy style */
   .trophy{
     background:rgba(0,0,0,0.45);
     border:2px solid var(--trophy);
   }
 
-  /* Settings button */
   .settings-btn{
     background:rgba(0,0,0,0.45);
     padding:8px;
@@ -121,14 +119,12 @@
     border:2px solid var(--gold);
   }
 
-  /* Character */
   #character{
     position:absolute; left:50%; transform:translateX(-50%); top:34%;
     width:220px; height:220px; object-fit:contain;
     z-index: 10;
   }
 
-  /* Rewards */
   #daily-rewards{
     position:absolute; left:50%; transform:translateX(-50%);
     bottom:170px; display:flex; gap:12px; align-items:center;
@@ -142,12 +138,10 @@
     position: relative;
   }
   .reward img{width:56px; height:56px;}
-  
   .reward.claimed{
     border:3px solid #666; background:rgba(100,100,100,0.2); filter:grayscale(1);
   }
-  
-  /* Загальний таймер для всіх скринь */
+
   #global-timer-container{
     position: absolute;
     bottom: -30px;
@@ -160,7 +154,6 @@
     display: none;
     z-index: 10;
   }
-  
   #global-timer{
     font-size: 14px;
     color: #fff;
@@ -169,7 +162,6 @@
     white-space: nowrap;
   }
 
-  /* Bottom controls */
   #bottom-controls{
     position:absolute; left:50%; transform:translateX(-50%); bottom:64px;
     display:flex; align-items:center; gap:22px;
@@ -187,7 +179,6 @@
   }
   .mode-box img{width:44px; height:44px;}
 
-  /* Menu buttons */
   .menu-btn{
     position:absolute; left:20px; padding:8px 22px; font-size:16px; font-weight:700;
     background:linear-gradient(to bottom,#ffcc33,#ff9900);
@@ -203,36 +194,404 @@
     padding:0; display:flex; align-items:center; justify-content:center;
     z-index: 10;
   }
-  
   .menu-img-btn img{
     width:120px; height:auto; border-radius:14px;
     box-shadow:0 4px 0 rgba(0,0,0,0.3); transition:transform 0.1s;
   }
-  
   .menu-img-btn:active img{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.3);}
   
   #shop-btn{bottom:420px;}
   #characters-btn{bottom:350px;}
   #brawl-pass-menu-btn{bottom:280px;}
 
+  /* Оверлей акційного скіна */
+  #skin-offer-overlay {
+    position: fixed;
+    display: none;
+    z-index: 45;
+    pointer-events: none;
+    width: 100%;
+    max-width: 500px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .skin-offer-container {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border: 3px solid #ff9900;
+    border-radius: 20px;
+    padding: 12px 14px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(255, 153, 0, 0.4);
+    animation: borderGlow 2s ease-in-out infinite alternate;
+    pointer-events: auto;
+    margin: 0 10px;
+  }
+
+  @keyframes borderGlow {
+    from { border-color: #ff9900; box-shadow: 0 0 20px rgba(255, 153, 0, 0.3); }
+    to { border-color: #ff6600; box-shadow: 0 0 40px rgba(255, 102, 0, 0.6); }
+  }
+
+  .offer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+
+  .offer-title {
+    color: #ff9900;
+    font-size: 18px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  }
+
+  .new-badge {
+    background: #ff0000;
+    color: white;
+    padding: 3px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    animation: pulse 1s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+  }
+
+  .offer-content {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+
+  .skin-preview-large {
+    width: 90px;
+    height: 90px;
+    border-radius: 12px;
+    border: 2px solid #ff9900;
+    background: rgba(0, 0, 0, 0.5);
+    object-fit: contain;
+  }
+
+  .offer-details {
+    flex: 1;
+  }
+
+  .skin-name {
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 8px;
+  }
+
+  .timer-section {
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    padding: 8px;
+    margin-bottom: 8px;
+  }
+
+  .timer-label {
+    color: #ccc;
+    font-size: 11px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .countdown {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .countdown-item {
+    background: #ff9900;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: bold;
+    font-size: 18px;
+    min-width: 40px;
+    text-align: center;
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  }
+
+  .countdown-sep {
+    color: #ff9900;
+    font-weight: bold;
+    font-size: 20px;
+  }
+
+  .buy-btn {
+    width: 100%;
+    padding: 10px;
+    background: linear-gradient(to bottom, #ff9900, #cc6600);
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    font-size: 15px;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 0 #994d00;
+    transition: all 0.2s;
+    pointer-events: auto;
+  }
+
+  .buy-btn:hover {
+    background: linear-gradient(to bottom, #ffaa00, #dd7700);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 0 #994d00;
+  }
+
+  .buy-btn:active {
+    transform: translateY(2px);
+    box-shadow: 0 2px 0 #994d00;
+  }
+
+  .price-tag {
+    font-size: 13px;
+    color: #ffd700;
+    margin-left: 4px;
+  }
+
+  /* Клас для приховування Brawlidays без видалення */
+  .hidden-brawlidays {
+    display: none !important;
+  }
 </style>
 </head>
 <body>
 
 <script>
+  // Глобальний перехоплювач помилок (підстраховка)
+  window.onerror = function(message, source, lineno, colno, error) {
+    if (message && (
+      message.includes("Cannot set properties of null (setting 'disabled')") ||
+      message.includes("Cannot read properties of null (reading 'addEventListener')")
+    )) {
+      console.warn('Перехоплено помилку роботи з null. Ігноруємо.');
+      return true;
+    }
+    return false;
+  };
+
   // Завантажуємо оригінальний файл
   fetch('https://raw.githubusercontent.com/haha1488top-source/brawl-simulator-ua/4048e8717baef1d86372e970de2108cff41906cf/index.html')
     .then(r => r.text())
     .then(html => {
-      // Замінюємо посилання на музику
       html = html.replace(/Snd\/brawzaar menu 01\.wav/g, 'Snd/brawzaarmenu01.mp3');
-      // Змінюємо max трофеїв на 14500
       html = html.replace(/MAX_TROPHIES\s*:\s*\d+/g, 'MAX_TROPHIES: 14500');
-      // Вставляємо змінений HTML
       document.write(html);
       document.close();
-    });
-</script>
 
+      // Після повного завантаження DOM запускаємо
+      setTimeout(() => {
+        startBrawlidaysHiding();
+        initSkinOfferOverlay();
+        injectBothSkins(); // ДОДАЄМО ОДРАЗУ ДВА СКІНИ
+      }, 1500);
+    });
+
+  function startBrawlidaysHiding() {
+    const shopScene = document.getElementById('shop-scene');
+    if (!shopScene) return;
+
+    function hideThemAll() {
+      const selectors = [
+        '[class*="brawliday"]',
+        '[id*="brawliday"]',
+        '[class*="holiday"]',
+        '[id*="holiday"]',
+        '.offer-brawlidays',
+        '#brawlidays-offer',
+        '.seasonal-offer'
+      ];
+      selectors.forEach(sel => {
+        const elements = shopScene.querySelectorAll(sel);
+        elements.forEach(el => el.classList.add('hidden-brawlidays'));
+      });
+
+      const allDivs = shopScene.querySelectorAll('div');
+      for (const div of allDivs) {
+        if (div.textContent.toLowerCase().includes('brawlidays')) {
+          div.classList.add('hidden-brawlidays');
+        }
+      }
+    }
+
+    hideThemAll();
+    const observer = new MutationObserver(() => { hideThemAll(); });
+    observer.observe(shopScene, { childList: true, subtree: true });
+  }
+
+  // ============================================================
+  // ДОДАЄМО ДВА СКІНИ: Кансай Дракон Булл (29 кристалів) ТА Мейверік Кроу (49 кристалів)
+  // ============================================================
+  function injectBothSkins() {
+    const shopScene = document.getElementById('shop-scene');
+    if (!shopScene) {
+      const wait = setInterval(() => {
+        const sc = document.getElementById('shop-scene');
+        if (sc) {
+          clearInterval(wait);
+          doInjectSkins(sc);
+        }
+      }, 300);
+      return;
+    }
+    doInjectSkins(shopScene);
+  }
+
+  function doInjectSkins(shopScene) {
+    // Запобігаємо подвійній ін'єкції
+    if (document.getElementById('custom-skin-bull')) return;
+
+    // Знаходимо контейнер
+    let container = shopScene.querySelector('.shop-items, .skins-grid, .items-grid, .shop-grid, .shop-content');
+    if (!container) {
+      const allDivs = shopScene.querySelectorAll('div');
+      for (const div of allDivs) {
+        if (div.children.length >= 2) {
+          container = div;
+          break;
+        }
+      }
+    }
+    if (!container) container = shopScene;
+
+    // СКІН 1: Кансай Дракон Булл (29 кристалів)
+    const bullCard = document.createElement('div');
+    bullCard.id = 'custom-skin-bull';
+    bullCard.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      background: linear-gradient(160deg, #1a0a00 0%, #3a1500 60%, #1a0a00 100%);
+      border: 3px solid #ff6600;
+      border-radius: 14px;
+      padding: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 16px rgba(255,102,0,0.5);
+      position: relative;
+      min-width: 90px;
+      min-height: 110px;
+      transition: transform 0.15s;
+    `;
+    bullCard.innerHTML = `
+      <div style="position:absolute; top:4px; left:4px; background:#ff0000; color:#fff; font-size:9px; font-weight:900; padding:2px 6px; border-radius:8px;">🔥 HOT</div>
+      <img src="Img/bull_kansai_dragon_bull_001.png" style="width:70px; height:70px; object-fit:contain; margin-bottom:4px;" onerror="this.style.opacity='0.5'">
+      <div style="color:#fff; font-size:11px; font-weight:700; text-align:center; margin-bottom:4px;">🐉 Кансай Дракон<br>Булл</div>
+      <div style="background:linear-gradient(to bottom,#ff9900,#cc6600); color:#fff; font-size:12px; font-weight:800; padding:4px 10px; border-radius:8px; display:flex; align-items:center; gap:4px;">29 <img src="Img/gem.png" style="width:16px;height:16px;"></div>
+      <style>#custom-skin-bull:hover{transform:scale(1.05); box-shadow:0 0 28px #ff6600;}</style>
+    `;
+    bullCard.onclick = () => confirmPurchase('bull', 'Кансай Дракон Булл', 29, 'Img/bull_kansai_dragon_bull_001.png');
+
+    // СКІН 2: Мейверік Кроу (49 кристалів)
+    const crowCard = document.createElement('div');
+    crowCard.id = 'custom-skin-crow';
+    crowCard.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      background: linear-gradient(160deg, #0a1a2e 0%, #0a2a4a 60%, #0a1a2e 100%);
+      border: 3px solid #4a86e8;
+      border-radius: 14px;
+      padding: 8px;
+      cursor: pointer;
+      box-shadow: 0 0 16px rgba(74,134,232,0.5);
+      position: relative;
+      min-width: 90px;
+      min-height: 110px;
+      transition: transform 0.15s;
+    `;
+    crowCard.innerHTML = `
+      <div style="position:absolute; top:4px; left:4px; background:#ff0000; color:#fff; font-size:9px; font-weight:900; padding:2px 6px; border-radius:8px;">NEW</div>
+      <img src="Img/crow_maverick.png" style="width:70px; height:70px; object-fit:contain; margin-bottom:4px;" onerror="this.style.opacity='0.5'">
+      <div style="color:#fff; font-size:11px; font-weight:700; text-align:center; margin-bottom:4px;">🤠 Мейверік<br>Кроу</div>
+      <div style="background:linear-gradient(to bottom,#4a86e8,#2a5ab8); color:#fff; font-size:12px; font-weight:800; padding:4px 10px; border-radius:8px; display:flex; align-items:center; gap:4px;">49 <img src="Img/gem.png" style="width:16px;height:16px;"></div>
+      <style>#custom-skin-crow:hover{transform:scale(1.05); box-shadow:0 0 28px #4a86e8;}</style>
+    `;
+    crowCard.onclick = () => confirmPurchase('crow', 'Мейверік Кроу', 49, 'Img/crow_maverick.png');
+
+    container.insertBefore(crowCard, container.firstChild);
+    container.insertBefore(bullCard, container.firstChild);
+  }
+
+  function confirmPurchase(skinId, skinName, price, imgUrl) {
+    if (confirm(`${skinName}\n\n💰 Ціна: ${price} кристалів\n\nПридбати скін?`)) {
+      alert(`✅ Вітаємо!\nСкін "${skinName}" успішно придбано за ${price} кристалів!`);
+      // Тут можна додати логіку збереження скіна в localStorage
+    }
+  }
+
+  function initSkinOfferOverlay() {
+    const overlayHTML = `
+      <div id="skin-offer-overlay">
+        <div class="skin-offer-container">
+          <div class="offer-header">
+            <span class="offer-title">⚡ Спецпропозиція</span>
+            <span class="new-badge">NEW</span>
+          </div>
+          <div class="offer-content">
+            <img src="Img/bull_kansai_dragon_bull_001.png" class="skin-preview-large" alt="Кансай Дракон Булл">
+            <div class="offer-details">
+              <div class="skin-name">🐉 Кансай Дракон Булл</div>
+              <div class="timer-section">
+                <div class="timer-label">⏰ Закінчується через:</div>
+                <div class="countdown" id="offer-countdown">
+                  <div class="countdown-item" id="offer-hours">00</div>
+                  <div class="countdown-sep">:</div>
+                  <div class="countdown-item" id="offer-minutes">00</div>
+                  <div class="countdown-sep">:</div>
+                  <div class="countdown-item" id="offer-seconds">00</div>
+                </div>
+              </div>
+              <button class="buy-btn" id="offer-buy-btn">🔥 КУПИТИ 29 💎</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+    document.body.insertAdjacentHTML('beforeend', overlayHTML);
+
+    setTimeout(() => {
+      const overlay = document.getElementById('skin-offer-overlay');
+      const shopScene = document.getElementById('shop-scene');
+      const buyBtn = document.getElementById('offer-buy-btn');
+      
+      if(buyBtn) {
+        buyBtn.onclick = () => confirmPurchase('bull', 'Кансай Дракон Булл', 29, 'Img/bull_kansai_dragon_bull_001.png');
+      }
+
+      function positionOverlay() {
+        if (!shopScene || !overlay) return;
+        const rect = shopScene.getBoundingClientRect();
+        overlay.style.top = (rect.top + 20) + 'px';
+        const isVisible = (shopScene.style.display === 'flex' || shopScene.style.display === 'block');
+        overlay.style.display = isVisible ? 'block' : 'none';
+      }
+
+      if (shopScene) {
+        const observer = new MutationObserver(() => positionOverlay());
+        observer.observe(shopScene, { attributes: true });
+        positionOverlay();
+      }
+      window.addEventListener('resize', positionOverlay);
+    }, 50);
+  }
+</script>
 </body>
 </html>
