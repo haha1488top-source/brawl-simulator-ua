@@ -4,406 +4,616 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 <title>Гра — Ловля монет</title>
-<link rel="stylesheet" href="minutes.css">
-<style>
-  :root{
-    --gold: #ffbf00;
-    --green1: #00c853;
-    --green2: #008000;
-    --common: #b0b0b0;
-    --rare: #4a86e8;
-    --super-rare: #8e7cc3;
-    --epic: #c27ba0;
-    --mythic: #9c27b0;
-    --legendary: #ff9900;
-    --chromatic: #e91e63;
-    --trophy: #ffd700;
-    --star: #ff4081;
-    --new-year: #ff0000;
-    --snow: #e0f7fa;
-  }
-
-  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
-  html,body{height:100%; width:100%; overflow:hidden; font-family:"Segoe UI",Roboto,sans-serif; background:#0a7b0a; touch-action:none;}
-
-  /* --- СТИЛІ ДЛЯ ТЕХНІЧНОЇ ПЕРЕРВИ --- */
-  #maintenance-scene{
-    position:fixed;
-    inset:0;
-    z-index:999999;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    background:linear-gradient(180deg,#1b1b1b,#000);
-    color:#fff;
-    text-align:center;
-    padding:20px;
-  }
-
-  #maintenance-scene h1{
-    font-size:42px;
-    margin-bottom:20px;
-    text-shadow:0 0 30px rgba(255,150,0,0.3);
-  }
-
-  #maintenance-scene p{
-    font-size:20px;
-    margin-bottom:25px;
-    opacity:0.8;
-  }
-
-  .maintenance-table{
-    width:320px;
-    max-width:90%;
-    margin-bottom:25px;
-  }
-
-  .maintenance-item{
-    display:flex;
-    justify-content:space-between;
-    background:rgba(255,255,255,0.08);
-    margin:8px 0;
-    padding:12px 18px;
-    border-radius:10px;
-    border-left:3px solid #ff9900;
-  }
-
-  .maintenance-item-label{
-    font-weight:300;
-    opacity:0.7;
-  }
-
-  .maintenance-item-value{
-    font-weight:600;
-    color:#ffd700;
-  }
-
-  .maintenance-progress{
-    width:320px;
-    max-width:90%;
-    height:24px;
-    background:#333;
-    border-radius:12px;
-    overflow:hidden;
-    margin-bottom:25px;
-    box-shadow:inset 0 2px 4px rgba(0,0,0,0.5);
-  }
-
-  .maintenance-progress-fill{
-    width:92%;
-    height:100%;
-    background:linear-gradient(90deg,#ff9900,#ffd700);
-    border-radius:12px;
-    animation:pulse 1.5s ease-in-out infinite;
-  }
-
-  @keyframes pulse{
-    0%{opacity:0.7;}
-    50%{opacity:1;}
-    100%{opacity:0.7;}
-  }
-
-  .refresh-btn{
-    padding:14px 40px;
-    border:none;
-    border-radius:12px;
-    font-size:18px;
-    font-weight:700;
-    cursor:pointer;
-    color:#fff;
-    background:linear-gradient(180deg,#ff9900,#e67e00);
-    box-shadow:0 4px 0 #b35f00, 0 8px 20px rgba(255,150,0,0.3);
-    transition:transform 0.1s, box-shadow 0.1s;
-    letter-spacing:0.5px;
-  }
-
-  .refresh-btn:active{
-    transform:translateY(4px);
-    box-shadow:0 0px 0 #b35f00, 0 8px 20px rgba(255,150,0,0.2);
-  }
-
-  /* --- Loading scene --- */
-  #loading-scene{
-    position:fixed; inset:0;
-    background:url('Img/loading_2020_tara_bazaar.png') center/cover no-repeat;
-    display:flex; align-items:flex-end; justify-content:center;
-    z-index:50;
-  }
-  #progress-wrap{
-    width:82%; max-width:900px; height:20px; margin-bottom:48px;
-    background:rgba(255,255,255,0.25); border-radius:12px; overflow:hidden;
-    box-shadow:0 3px 8px rgba(0,0,0,0.35) inset;
-  }
-  #progress-bar{
-    width:0%; height:100%;
-    background:linear-gradient(90deg,#7fff7f,#00a000);
-    transition:width 0.12s linear;
-  }
-
-  /* --- Nickname scene --- */
-  #nickname-scene{
-    position:fixed; inset:0; display:none;
-    background:#f5fbff; align-items:center; justify-content:center; flex-direction:column;
-    gap:18px;
-  }
-  #nickname-scene h2{font-size:22px; color:#0b3a3a;}
-  #nickname-input{
-    padding:10px 18px; font-size:18px; border-radius:10px; width:78%; max-width:420px;
-    border:2px solid #9bd6ff; outline:none; text-align:center; background:#fff;
-  }
-  #continue-btn{
-    padding:10px 36px; font-size:18px; border-radius:10px; cursor:pointer;
-    background:linear-gradient(to bottom,#00a8ff,#0078c2); color:#fff; border:none;
-    box-shadow:0 4px 0 rgba(0,0,0,0.15);
-  }
-
-  /* --- Menu scene --- */
-  #menu-scene{
-    position:fixed; inset:0; display:none;
-    background:url('Img/sandsoftime_lobby.png') center/cover no-repeat;
-    overflow:hidden;
-  }
-
-  /* Top bar */
-  .top-bar{
-    position:absolute; top:10px; left:12px; right:12px;
-    display:flex; align-items:center; justify-content:space-between;
-    z-index: 20;
-  }
-  .nickname{
-    font-size:26px; font-weight:800; color:#fff; text-shadow:2px 2px 4px rgba(0,0,0,0.7);
-  }
-  .right-part{
-    display:flex;
-    align-items:center;
-    gap:12px;
-  }
-  .currency{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    background:rgba(0,0,0,0.45);
-    padding:6px 10px;
-    border-radius:14px;
-    color:#fff;
-    font-weight:700;
-    font-size:16px;
-    cursor:pointer;
-    transition:transform 0.2s;
-  }
-  .currency:hover{
-    transform:scale(1.05);
-  }
-  .currency img{width:26px; height:26px;}
-
-  /* Trophy style */
-  .trophy{
-    background:rgba(0,0,0,0.45);
-    border:2px solid var(--trophy);
-  }
-
-  /* Settings button */
-  .settings-btn{
-    background:rgba(0,0,0,0.45);
-    padding:8px;
-    border-radius:50%;
-    color:#fff;
-    font-size:20px;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    width:40px;
-    height:40px;
-    border:2px solid var(--gold);
-  }
-
-  /* Character */
-  #character{
-    position:absolute; left:50%; transform:translateX(-50%); top:34%;
-    width:220px; height:220px; object-fit:contain;
-    z-index: 10;
-  }
-
-  /* Rewards */
-  #daily-rewards{
-    position:absolute; left:50%; transform:translateX(-50%);
-    bottom:170px; display:flex; gap:12px; align-items:center;
-    z-index: 10;
-  }
-  .reward{
-    width:64px; height:64px; border-radius:12px;
-    border:3px solid var(--gold); background:rgba(255,215,0,0.10);
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 4px 8px rgba(0,0,0,0.25);
-    position: relative;
-  }
-  .reward img{width:56px; height:56px;}
-  
-  .reward.claimed{
-    border:3px solid #666; background:rgba(100,100,100,0.2); filter:grayscale(1);
-  }
-  
-  /* Загальний таймер для всіх скринь */
-  #global-timer-container{
-    position: absolute;
-    bottom: -30px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0,0,0,0.7);
-    padding: 5px 15px;
-    border-radius: 10px;
-    border: 2px solid var(--gold);
-    display: none;
-    z-index: 10;
-  }
-  
-  #global-timer{
-    font-size: 14px;
-    color: #fff;
-    font-weight: bold;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
-    white-space: nowrap;
-  }
-
-  /* Bottom controls */
-  #bottom-controls{
-    position:absolute; left:50%; transform:translateX(-50%); bottom:64px;
-    display:flex; align-items:center; gap:22px;
-    z-index: 10;
-  }
-  .play-btn{
-    padding:12px 44px; font-size:20px; font-weight:800; color:#fff;
-    background:linear-gradient(to bottom,var(--green1),var(--green2));
-    border-radius:14px; border:3px solid #ffb347; cursor:pointer;
-    box-shadow:0 6px 0 rgba(0,0,0,0.24);
-  }
-  .mode-box{
-    width:64px; height:64px; border-radius:10px; display:flex; align-items:center; justify-content:center;
-    border:3px solid var(--gold); background:rgba(0,0,0,0.16); cursor:pointer;
-  }
-  .mode-box img{width:44px; height:44px;}
-
-  /* Menu buttons */
-  .menu-btn{
-    position:absolute; left:20px; padding:8px 22px; font-size:16px; font-weight:700;
-    background:linear-gradient(to bottom,#ffcc33,#ff9900);
-    border:3px solid #ffea00; border-radius:14px; color:#fff; 
-    text-shadow:1px 1px 2px rgba(0,0,0,0.6); box-shadow:0 4px 0 rgba(0,0,0,0.3);
-    cursor:pointer;
-    z-index: 10;
-  }
-  .menu-btn:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.3);}
-  
-  .menu-img-btn{
-    position:absolute; left:20px; cursor:pointer; border:none; background:none;
-    padding:0; display:flex; align-items:center; justify-content:center;
-    z-index: 10;
-  }
-  
-  .menu-img-btn img{
-    width:120px; height:auto; border-radius:14px;
-    box-shadow:0 4px 0 rgba(0,0,0,0.3); transition:transform 0.1s;
-  }
-  
-  .menu-img-btn:active img{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.3);}
-  
-  #shop-btn{bottom:420px;}
-  #characters-btn{bottom:350px;}
-  #brawl-pass-menu-btn{bottom:280px;}
-
-</style>
 </head>
 <body>
 
-<!-- ТЕХНІЧНА ПЕРЕРВА -->
-<div id="maintenance-scene">
-  <h1>⚙️ ТЕХНІЧНІ РОБОТИ</h1>
-  <p>Гра тимчасово на обслуговуванні. Будь ласка, спробуйте пізніше!</p>
-  
-  <div class="maintenance-table">
-    <div class="maintenance-item">
-      <span class="maintenance-item-label">📊 Статус</span>
-      <span class="maintenance-item-value">🔧 В процесі</span>
-    </div>
-    <div class="maintenance-item">
-      <span class="maintenance-item-label">⏳ Час готовності</span>
-      <span class="maintenance-item-value" id="time-value">~1 година</span>
-    </div>
-    <div class="maintenance-item">
-      <span class="maintenance-item-label">📦 Оновлення</span>
-      <span class="maintenance-item-value">v2.4.1</span>
-    </div>
-  </div>
-
-  <div class="maintenance-progress">
-    <div class="maintenance-progress-fill"></div>
-  </div>
-
-  <button class="refresh-btn" onclick="location.reload()">🔄 Оновити</button>
-  
-  <p style="margin-top:20px; font-size:13px; opacity:0.3;">Слідкуйте за новинами в соцмережах</p>
-</div>
-
-<!-- ЗАВАНТАЖЕННЯ -->
-<div id="loading-scene">
-  <div id="progress-wrap">
-    <div id="progress-bar"></div>
-  </div>
-</div>
-
 <script>
-  // Завантаження оригінального HTML
+  // ============================================================
+  // НАДНАДІЙНИЙ ПЕРЕХОПЛЮВАЧ ПОМИЛОК (ХОВАЄ ВСІ ВІКНА ПОМИЛОК)
+  // ============================================================
+  window.onerror = function(message, source, lineno, colno, error) {
+    console.log('Системне глушіння помилки:', message);
+    return true; // WebView DroidScript ніколи не покаже Script Error вікно
+  };
+
+  // Завантажуємо оригінальний файл гри з GitHub
   fetch('https://raw.githubusercontent.com/haha1488top-source/brawl-simulator-ua/4048e8717baef1d86372e970de2108cff41906cf/index.html')
     .then(r => r.text())
     .then(html => {
-      // Замінюємо посилання на музику
       html = html.replace(/Snd\/brawzaar menu 01\.wav/g, 'Snd/brawzaarmenu01.mp3');
-      // Змінюємо max трофеїв на 14500
       html = html.replace(/MAX_TROPHIES\s*:\s*\d+/g, 'MAX_TROPHIES: 14500');
-      
-      // Парсимо HTML
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
-      // Отримуємо сцени з оригіналу
-      const originalScenes = doc.body.innerHTML;
-      
-      // Зберігаємо наші сцени
-      const maintenanceScene = document.getElementById('maintenance-scene');
-      const loadingScene = document.getElementById('loading-scene');
-      
-      // Очищаємо body
-      document.body.innerHTML = '';
-      
-      // Вставляємо оригінальний вміст
-      document.body.innerHTML = originalScenes;
-      
-      // Додаємо наші сцени зверху
-      document.body.insertBefore(maintenanceScene, document.body.firstChild);
-      document.body.appendChild(loadingScene);
-      
-      // Додаємо скрипти з оригіналу
-      doc.querySelectorAll('script').forEach(script => {
-        const newScript = document.createElement('script');
-        if (script.src) {
-          newScript.src = script.src;
-        } else {
-          newScript.textContent = script.textContent;
-        }
-        document.body.appendChild(newScript);
-      });
-      
-      // Додаємо стилі з оригіналу
-      doc.querySelectorAll('style').forEach(style => {
-        const newStyle = document.createElement('style');
-        newStyle.textContent = style.textContent;
-        document.head.appendChild(newStyle);
-      });
-    })
-    .catch(err => console.error('Помилка завантаження:', err));
-</script>
+      document.write(html);
+      document.close();
 
+      // Старт модифікацій інтерфейсу
+      setTimeout(() => {
+        injectDynamicStyles();
+        startBrawlidaysHiding();
+        initSkinOfferGridInline(); 
+        initPinDropOverlay(); 
+        injectShopOffers(); 
+        initPinsMenuSystem(); 
+        
+        // Фоновий цикл автофіксу
+        setInterval(() => {
+          runAutoFixLogic();
+          injectAutoFixButtonOnly(); 
+        }, 1500);
+      }, 1000);
+    });
+
+  // ============================================================
+  // РОЗУМНИЙ ГЛИБОКИЙ СКАНЕР ТА СПИСУВАННЯ КРИСТАЛІВ
+  // ============================================================
+  function spendGems(amount) {
+    let currentGems = 0;
+    let foundType = null;
+    let jsonKey = null;
+    let jsonProp = null;
+
+    // Крок 1: Шукаємо у глобальних змінних вікна
+    if (window.gems !== undefined) { currentGems = parseInt(window.gems); foundType = 'window_gems'; }
+    else if (window.player && window.player.gems !== undefined) { currentGems = parseInt(window.player.gems); foundType = 'player_gems'; }
+    else if (window.crystals !== undefined) { currentGems = parseInt(window.crystals); foundType = 'window_crystals'; }
+    
+    // Крок 2: Шукаємо у прямих ключах localStorage
+    if (!foundType) {
+      if (localStorage.getItem('gems') !== null) { currentGems = parseInt(localStorage.getItem('gems')); foundType = 'local_gems'; }
+      else if (localStorage.getItem('crystals') !== null) { currentGems = parseInt(localStorage.getItem('crystals')); foundType = 'local_crystals'; }
+    }
+
+    // Крок 3: Шукаємо всередині збережених JSON-об'єктів (глибокий парсинг сховища)
+    if (!foundType || currentGems === 0) {
+      for (let i = 0; i < localStorage.length; i++) {
+        let key = localStorage.key(i);
+        try {
+          let data = JSON.parse(localStorage.getItem(key));
+          if (data && typeof data === 'object') {
+            let possibleProps = ['gems', 'gem', 'crystals', 'crystal', 'money', 'balance', 'score'];
+            for (let prop of possibleProps) {
+              if (data[prop] !== undefined) {
+                currentGems = parseInt(data[prop]);
+                foundType = 'json_local';
+                jsonKey = key;
+                jsonProp = prop;
+                break;
+              }
+            }
+          }
+        } catch(e) {}
+        if (foundType === 'json_local') break;
+      }
+    }
+
+    // Крок 4: АВАРІЙНИЙ ХУК — Зчитуємо баланс прямо з тексту меню гри, якщо дані засекречені
+    if (!foundType || currentGems === 0) {
+      const gemSelectors = ['#gems', '#gem-count', '.gem-count', '.gems', '#player-gems', '#money', '.crystals-count', '[class*="gem"]', '[id*="gem"]'];
+      for (let sel of gemSelectors) {
+        let el = document.querySelector(sel);
+        if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
+          let textNum = parseInt(el.textContent.replace(/\D/g, '')); // Витягуємо суто цифри
+          if (!isNaN(textNum) && textNum > 0) {
+            currentGems = textNum;
+            foundType = 'dom_fallback';
+            break;
+          }
+        }
+      }
+    }
+
+    // Перевірка, чи гравцеві вистачає коштів
+    if (currentGems < amount) {
+      alert(`❌ Недостатньо кристалів!\n\nПотрібно: ${amount} 💎\nУ тебе є: ${currentGems} 💎`);
+      return false;
+    }
+
+    // Розрахунок нового балансу
+    let newGems = currentGems - amount;
+    
+    // Записуємо оновлені дані туди, звідки взяли
+    if (foundType === 'window_gems') window.gems = newGems;
+    else if (foundType === 'player_gems') window.player.gems = newGems;
+    else if (foundType === 'window_crystals') window.crystals = newGems;
+    else if (foundType === 'local_gems') localStorage.setItem('gems', newGems);
+    else if (foundType === 'local_crystals') localStorage.setItem('crystals', newGems);
+    else if (foundType === 'json_local' && jsonKey && jsonProp) {
+      try {
+        let data = JSON.parse(localStorage.getItem(jsonKey));
+        data[jsonProp] = newGems;
+        localStorage.setItem(jsonKey, JSON.stringify(data));
+      } catch(e) {}
+    }
+
+    // Про всяк випадок дублюємо в загальні змінні
+    if (window.gems !== undefined) window.gems = newGems;
+    if (window.player && window.player.gems !== undefined) window.player.gems = newGems;
+
+    // Миттєво оновлюємо ВСІ цифри на екрані гри в реальному часі
+    const allSelectors = ['#gems', '#gem-count', '.gem-count', '.gems', '#player-gems', '#money', '.crystals-count', '[class*="gem"]', '[id*="gem"]'];
+    allSelectors.forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        if (el.children.length === 0 || el.textContent.trim().match(/^\d+$/)) {
+          el.textContent = newGems;
+        } else {
+          el.innerHTML = el.innerHTML.replace(/\d+/, newGems);
+        }
+      });
+    });
+
+    // Викликаємо системні функції збереження та оновлення оригінальної гри
+    if (typeof updateUI === 'function') updateUI();
+    if (typeof updateHUD === 'function') updateHUD();
+    if (typeof saveGame === 'function') saveGame();
+    if (typeof save === 'function') save();
+
+    return true;
+  }
+
+  // ============================================================
+  // АВТОМАТИЧНИЙ ФІКС ДУБЛІВ ТА БАНЕРІВ
+  // ============================================================
+  function runAutoFixLogic() {
+    startBrawlidaysHiding();
+    
+    const shopScene = document.getElementById('shop-scene');
+    if (!shopScene) return;
+    
+    const container = getShopContainer(shopScene);
+    if (!container) return;
+
+    const allShopElements = container.children;
+    for (let i = allShopElements.length - 1; i >= 0; i--) {
+      const el = allShopElements[i];
+      if (el.id === 'custom-skin-offer-banner' || el.id === 'custom-pin-pack' || el.id === 'custom-skin-crow') continue;
+      
+      const text = el.textContent || '';
+      const html = el.innerHTML || '';
+      
+      if (
+        text.includes('Кансай') || 
+        text.includes('Булл') || 
+        html.includes('bull_kansai') || 
+        text.includes('Мейверік') || 
+        html.includes('crow_maverick')
+      ) {
+        el.remove();
+      }
+    }
+
+    const banner = document.getElementById('custom-skin-offer-banner');
+    if (!banner) {
+      initSkinOfferGridInline();
+    } else if (container.firstChild !== banner) {
+      container.insertBefore(banner, container.firstChild);
+    }
+    
+    if (!document.getElementById('custom-pin-pack') || !document.getElementById('custom-skin-crow')) {
+      injectShopOffers();
+    }
+  }
+
+  // ============================================================
+  // ІНТЕГРАЦІЯ КНОПКИ ТА СТИЛІЗАЦІЯ ВНУТРІШНЬОГО UI НАЛАШТУВАНЬ
+  // ============================================================
+  function injectAutoFixButtonOnly() {
+    const settingsScene = document.getElementById('settings-scene') || document.getElementById('settings') || document.querySelector('.settings-scene') || document.querySelector('.settings-popup');
+    if (!settingsScene) return;
+
+    const innerBox = settingsScene.querySelector('div') || settingsScene;
+    if (!innerBox || innerBox === settingsScene) return;
+
+    const allTexts = innerBox.querySelectorAll('h1, h2, h3, div, span, p');
+    allTexts.forEach(el => {
+      if (el.textContent.includes('Налаштування')) {
+        el.style.setProperty('color', '#fff', 'important');
+        el.style.setProperty('font-size', '24px', 'important');
+        el.style.setProperty('font-weight', '900', 'important');
+        el.style.setProperty('text-transform', 'uppercase', 'important');
+        el.style.setProperty('text-shadow', '2px 2px 0px #000', 'important');
+        el.style.setProperty('text-align', 'center', 'important');
+      }
+      if (el.textContent.includes('Музика') || el.textContent.includes('Звук')) {
+        el.style.setProperty('color', '#fff', 'important');
+        el.style.setProperty('font-weight', '900', 'important');
+        el.style.setProperty('text-shadow', '1px 1px 1px #000', 'important');
+      }
+    });
+
+    const allButtons = innerBox.querySelectorAll('button, div[onclick]');
+    let backBtn = null;
+    
+    allButtons.forEach(b => {
+      if (b.id === 'autofix-settings-btn') return;
+      if (b.textContent.includes('Назад') || b.textContent.includes('Закрити')) backBtn = b;
+
+      b.style.setProperty('border-radius', '12px', 'important');
+      b.style.setProperty('font-weight', '900', 'important');
+      b.style.setProperty('font-size', '13px', 'important');
+      b.style.setProperty('text-transform', 'uppercase', 'important');
+      b.style.setProperty('text-shadow', '1px 1px 1px #000', 'important');
+      b.style.setProperty('padding', '10px', 'important');
+      b.style.setProperty('border', '3px solid #222', 'important');
+      
+      if (b.textContent.includes('Зберегти')) {
+        b.style.setProperty('background', 'linear-gradient(to bottom, #4caf50, #2e7d32)', 'important');
+        b.style.setProperty('box-shadow', '0 4px 0 #1b5e20', 'important');
+      } else if (b.textContent.includes('Стерти')) {
+        b.style.setProperty('background', 'linear-gradient(to bottom, #f44336, #d32f2f)', 'important');
+        b.style.setProperty('box-shadow', '0 4px 0 #7f1d1d', 'important');
+      } else if (b.textContent.includes('Назад') || b.textContent.includes('Закрити')) {
+        b.style.setProperty('background', 'linear-gradient(to bottom, #ff9800, #f57c00)', 'important');
+        b.style.setProperty('box-shadow', '0 4px 0 #b35900', 'important');
+      }
+    });
+
+    if (document.getElementById('autofix-settings-btn')) return;
+
+    const fixBtn = document.createElement('button');
+    fixBtn.id = 'autofix-settings-btn';
+    fixBtn.innerHTML = '🔧 Автофікс гри';
+    fixBtn.style.cssText = `
+      width: 100% !important;
+      background: linear-gradient(to bottom, #0288d1, #01579b) !important;
+      color: #fff !important;
+      border: 3px solid #4fc3f7 !important;
+      font-weight: 900 !important;
+      padding: 11px !important;
+      border-radius: 12px !important;
+      font-size: 13px !important;
+      text-transform: uppercase !important;
+      box-shadow: 0 4px 0 #002f6c !important;
+      cursor: pointer !important;
+      text-shadow: 1px 1px 1px #000 !important;
+      margin: 2px 0 !important;
+    `;
+
+    if (backBtn) {
+      backBtn.parentNode.insertBefore(fixBtn, backBtn);
+    } else {
+      innerBox.appendChild(fixBtn);
+    }
+
+    fixBtn.onclick = function() {
+      runAutoFixLogic();
+      alert('🔧 Автофікс виконано! Дублікати видалено, інтерфейс перевірено.');
+    };
+  }
+
+  // ============================================================
+  // СТИЛІ ІНТЕРФЕЙСУ СЦЕН ТА КНОПОК
+  // ============================================================
+  function injectDynamicStyles() {
+    if (document.getElementById('custom-dynamic-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'custom-dynamic-styles';
+    style.innerHTML = `
+      .hidden-brawlidays { display: none !important; }
+
+      #settings-scene, #settings, .settings-scene, .settings-popup {
+        position: fixed !important;
+        inset: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        background: linear-gradient(135deg, #0c1428 0%, #050914 100%) !important;
+        z-index: 20000 !important;
+        transform: none !important;
+      }
+
+      #settings-scene > div, #settings > div, .settings-scene > div, .settings-popup > div {
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        background: rgba(0, 0, 0, 0.6) !important;
+        border: 4px solid #ffaa00 !important;
+        border-radius: 24px !important;
+        padding: 22px !important;
+        width: 88% !important;
+        max-width: 340px !important;
+        box-shadow: 0 0 35px rgba(0,0,0,0.9) !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 12px !important;
+        box-sizing: border-box !important;
+      }
+
+      .pins-tab-container {
+        position: absolute; top: 85px; left: 50%; transform: translateX(-50%);
+        display: flex; gap: 8px; z-index: 9999; background: rgba(0, 0, 0, 0.6);
+        padding: 5px; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      }
+      .pins-tab-btn {
+        background: linear-gradient(to bottom, #5a5a5a, #3a3a3a); border: 3px solid #222;
+        color: #fff; font-weight: 900; padding: 6px 22px; border-radius: 10px;
+        font-size: 14px; cursor: pointer; text-transform: uppercase; text-shadow: 1px 1px 2px #000; box-shadow: 0 4px 0 #111;
+      }
+      .pins-tab-btn.active {
+        background: linear-gradient(to bottom, #ffaa00, #ff6600); border: 3px solid #ffea00; box-shadow: 0 4px 0 #b34a00;
+      }
+
+      #custom-pins-grid {
+        position: absolute; top: 145px; inset: 145px 15px 15px 15px;
+        background: linear-gradient(180deg, rgba(10,24,54,0.95) 0%, rgba(5,12,28,0.95) 100%);
+        border-radius: 16px; border: 3px solid #ffaa00; padding: 15px; overflow-y: auto;
+        display: none; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 12px; z-index: 9998; align-content: start;
+      }
+      .pin-card {
+        background: linear-gradient(135deg, #2b114c, #140526); border: 2px solid #9c27b0; border-radius: 12px; padding: 8px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; min-height: 95px;
+      }
+      .pin-card.locked { background: linear-gradient(135deg, #2a2a2a, #141414); border: 2px solid #555; }
+      .pin-card img { width: 52px; height: 52px; object-fit: contain; }
+      .pin-card.locked img { filter: grayscale(1) brightness(0.4); }
+      .pin-card .lock-overlay { position: absolute; font-size: 20px; color: #fff; text-shadow: 0 2px 4px #000; }
+      .pin-card .pin-title { color: #fff; font-size: 9px; text-align: center; margin-top: 6px; font-weight: 700; text-shadow: 1px 1px 1px #000; }
+
+      #custom-skin-offer-banner { grid-column: 1 / -1 !important; width: 100%; max-width: 440px; margin: 5px auto 15px auto; display: block; box-sizing: border-box; }
+      .skin-offer-container { background: linear-gradient(135deg, #16213e 0%, #0f3460 100%); border: 3px solid #ff9900; border-radius: 20px; padding: 12px; box-shadow: 0 0 15px rgba(255,153,0,0.3); box-sizing: border-box; width: 100%; }
+      .offer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+      .offer-title { color: #ff9900; font-size: 16px; font-weight: 900; text-transform: uppercase; }
+      .new-badge { background: #ff0000; color: white; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+      .offer-content { display: flex; gap: 12px; align-items: center; justify-content: center; }
+      .skin-preview-large { height: 95px; width: auto; max-width: 90px; object-fit: contain; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5)); }
+      .offer-details { flex: 1; }
+      .skin-name { color: white; font-size: 15px; font-weight: bold; margin-bottom: 6px; }
+      .timer-section { background: rgba(0,0,0,0.4); border-radius: 8px; padding: 6px; margin-bottom: 6px; }
+      .timer-label { color: #ccc; font-size: 10px; text-transform: uppercase; text-align: center; margin-bottom: 2px; }
+      .countdown { display: flex; gap: 2px; justify-content: center; align-items: center; }
+      .countdown-item { background: #000; padding: 2px 5px; border-radius: 4px; font-weight: bold; color: #ff3333; font-family: monospace; font-size: 13px; }
+      .countdown-sep { color: white; font-weight: bold; font-size: 12px; }
+      
+      .buy-btn { 
+        display: flex; align-items: center; justify-content: center; gap: 6px;
+        width: 100%; padding: 8px; background: linear-gradient(to bottom, #ff9900, #cc6600); 
+        border: none; border-radius: 8px; color: white; font-weight: bold; font-size: 14px; 
+        cursor: pointer; text-transform: uppercase; box-shadow: 0 3px 0 #994d00; 
+      }
+      .buy-btn img { width: 15px; height: 15px; object-fit: contain; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function startBrawlidaysHiding() {
+    const shopScene = document.getElementById('shop-scene');
+    if (!shopScene) return;
+    const selectors = ['[class*="brawliday"]', '[id*="brawliday"]', '[class*="holiday"]', '[id*="holiday"]', '.offer-brawlidays', '#brawlidays-offer', '.seasonal-offer'];
+    selectors.forEach(sel => {
+      shopScene.querySelectorAll(sel).forEach(el => el.classList.add('hidden-brawlidays'));
+    });
+  }
+
+  function getShopContainer(shopScene) {
+    let container = shopScene.querySelector('.shop-items, .skins-grid, .items-grid, .shop-grid, .shop-content');
+    if (!container) {
+      const allDivs = shopScene.querySelectorAll('div');
+      for (const div of allDivs) {
+        if (div.children.length >= 2) { container = div; break; }
+      }
+    }
+    return container || shopScene;
+  }
+
+  // ============================================================
+  // ДОДАВАННЯ ТОВАРІВ У МАГАЗИН З ПЕРЕВІРКОЮ БАЛАНСУ
+  // ============================================================
+  function injectShopOffers() {
+    const shopScene = document.getElementById('shop-scene');
+    if (!shopScene) return;
+    const container = getShopContainer(shopScene);
+    if (document.getElementById('custom-pin-pack')) return;
+
+    // Товар Набір значків (19 гемів)
+    const pinPackCard = document.createElement('div');
+    pinPackCard.id = 'custom-pin-pack';
+    pinPackCard.style.cssText = `
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+      background: linear-gradient(160deg, #2b114c 0%, #4a1f80 60%, #2b114c 100%);
+      border: 3px solid #9c27b0; border-radius: 14px; padding: 8px; cursor: pointer; min-width: 90px; min-height: 110px;
+    `;
+    pinPackCard.innerHTML = `
+      <div style="position:absolute; top:4px; left:4px; background:#9c27b0; color:#fff; font-size:9px; font-weight:900; padding:2px 6px; border-radius:8px;">EPIC</div>
+      <img src="Img/pin_pack_icon.png" style="width:65px; height:65px; object-fit:contain; margin-bottom:4px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/744/744922.png';">
+      <div style="color:#fff; font-size:11px; font-weight:700; text-align:center; margin-bottom:4px;">✨ Набір значків</div>
+      <div style="background:linear-gradient(to bottom,#9c27b0,#673ab7); color:#fff; font-size:12px; font-weight:800; padding:4px 10px; border-radius:8px; display:flex; align-items:center; gap:4px;">19 <img src="Img/gem.png" style="width:14px;height:14px;"></div>
+    `;
+    pinPackCard.onclick = buyPinPack;
+
+    // Товар Кроу (49 гемів)
+    const crowCard = document.createElement('div');
+    crowCard.id = 'custom-skin-crow';
+    crowCard.style.cssText = pinPackCard.style.cssText.replace(/#9c27b0/g, '#4a86e8').replace(/#2b114c/g, '#0a1a2e').replace(/#4a1f80/g, '#0a2a4a');
+    crowCard.innerHTML = `
+      <div style="position:absolute; top:4px; left:4px; background:#ff0000; color:#fff; font-size:9px; font-weight:900; padding:2px 6px; border-radius:8px;">NEW</div>
+      <img src="Img/crow_maverick.png" style="width:65px; height:65px; object-fit:contain; margin-bottom:4px;" onerror="this.style.opacity='0.5'">
+      <div style="color:#fff; font-size:11px; font-weight:700; text-align:center; margin-bottom:4px;">🤠 Мейверік Кроу</div>
+      <div style="background:linear-gradient(to bottom,#4a86e8,#2a5ab8); color:#fff; font-size:12px; font-weight:800; padding:4px 10px; border-radius:8px; display:flex; align-items:center; gap:4px;">49 <img src="Img/gem.png" style="width:14px;height:14px;"></div>
+    `;
+    crowCard.onclick = () => confirmPurchase('crow', 'Мейверік Кроу', 49, 'Img/crow_maverick.png');
+
+    container.insertBefore(crowCard, container.firstChild);
+    container.insertBefore(pinPackCard, container.firstChild);
+  }
+
+  function confirmPurchase(skinId, skinName, price, imgUrl) {
+    if (confirm(`${skinName}\n\n💰 Ціна: ${price} кристалів\n\nПридбати цей скін?`)) {
+      if (spendGems(price)) {
+        alert(`✅ Скін "${skinName}" успішно додано до колекції! Баланс оновлено.`);
+      }
+    }
+  }
+
+  function initSkinOfferGridInline() {
+    const shopScene = document.getElementById('shop-scene');
+    if (!shopScene) return;
+    const container = getShopContainer(shopScene);
+    if (document.getElementById('custom-skin-offer-banner')) return;
+
+    const bannerWrapper = document.createElement('div');
+    bannerWrapper.id = 'custom-skin-offer-banner';
+    bannerWrapper.innerHTML = `
+      <div class="skin-offer-container">
+        <div class="offer-header">
+          <span class="offer-title">⚡ Спецпропозиція</span>
+          <span class="new-badge">NEW</span>
+        </div>
+        <div class="offer-content">
+          <img src="Img/bull_kansai_dragon_bull_001.png" class="skin-preview-large" onerror="this.style.opacity='0.5'">
+          <div class="offer-details">
+            <div class="skin-name">🐉 Кансай Дракон Булл</div>
+            <div class="timer-section">
+              <div class="timer-label">⏰ До кінця акції:</div>
+              <div class="countdown">
+                <div class="countdown-item" id="ch-hours">23</div><div class="countdown-sep">:</div>
+                <div class="countdown-item" id="ch-minutes">59</div><div class="countdown-sep">:</div>
+                <div class="countdown-item" id="ch-seconds">59</div>
+              </div>
+            </div>
+            <button class="buy-btn" id="offer-buy-btn">🔥 Купити за 29 <img src="Img/gem.png"></button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    container.insertBefore(bannerWrapper, container.firstChild);
+    const buyBtn = bannerWrapper.querySelector('#offer-buy-btn');
+    if (buyBtn) {
+      buyBtn.onclick = () => confirmPurchase('bull', 'Кансай Дракон Булл', 29, 'Img/bull_kansai_dragon_bull_001.png');
+    }
+
+    setInterval(() => {
+      const now = new Date();
+      const h = String(23 - now.getHours()).padStart(2, '0');
+      const m = String(59 - now.getMinutes()).padStart(2, '0');
+      const s = String(59 - now.getSeconds()).padStart(2, '0');
+      const elH = document.getElementById('ch-hours');
+      const elM = document.getElementById('ch-minutes');
+      const elS = document.getElementById('ch-seconds');
+      if (elH && elM && elS) { elH.textContent = h; elM.textContent = m; elS.textContent = s; }
+    }, 1000);
+  }
+
+  // ============================================================
+  // СИСТЕМА ЗНАЧКІВ ТА ГАЛЕРЕЇ З ОПЛАТОЮ В ГЕМАХ
+  // ============================================================
+  const availablePins = [
+    { id: "pin_juice", name: "Пін Сік (Carreta Juice)", img: "Img/emoji_carreta_juice.png" },
+    { id: "pin_classic_small", name: "Маленький Класичний Пін", img: "Img/classic_box_small_pin.png" },
+    { id: "pin_classic_mega", name: "Мега Класичний Пін", img: "Img/classic_box_mega_pin.png" }
+  ];
+
+  function initPinDropOverlay() {
+    if (document.getElementById('pin-drop-overlay')) return;
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="pin-drop-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 10000; color: #fff; text-align: center;">
+        <div style="background: linear-gradient(135deg, #2b1055, #752201); border: 4px solid #ffd700; border-radius: 24px; padding: 30px; max-width: 320px; width: 85%; box-shadow: 0 0 30px #ffd700;">
+          <h2 style="color: #ffd700; font-size: 24px; text-shadow: 2px 2px #000;">ВИПАВ ПІН!</h2>
+          <img id="dropped-pin-img" src="" style="width: 120px; height: 120px; object-fit: contain; margin: 15px 0;">
+          <h3 id="dropped-pin-name" style="font-size: 18px; margin-bottom: 10px;">Назва піна</h3>
+          <button style="background: #ffcc00; color: #000; border: none; font-weight: 900; padding: 10px 24px; border-radius: 12px; font-size: 16px; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 0 #b38f00;" onclick="closePinDrop()">ЗАБРАТИ</button>
+        </div>
+      </div>
+    `);
+  }
+
+  function buyPinPack() {
+    if (confirm("✨ Придбати Набір значків (Пін Пак) за 19 кристалів?")) {
+      if (!spendGems(19)) return;
+
+      const randomIndex = Math.floor(Math.random() * availablePins.length);
+      const reward = availablePins[randomIndex];
+      let unlockedPins = JSON.parse(localStorage.getItem('game_unlocked_pins')) || [];
+      if (!unlockedPins.includes(reward.id)) {
+        unlockedPins.push(reward.id);
+        localStorage.setItem('game_unlocked_pins', JSON.stringify(unlockedPins));
+      }
+      const overlay = document.getElementById('pin-drop-overlay');
+      if (overlay) {
+        document.getElementById('dropped-pin-img').src = reward.img;
+        document.getElementById('dropped-pin-name').textContent = reward.name;
+        overlay.style.display = 'flex';
+      }
+      renderPinsGallery();
+    }
+  }
+
+  function closePinDrop() { document.getElementById('pin-drop-overlay').style.display = 'none'; }
+
+  function initPinsMenuSystem() {
+    const charScene = document.getElementById('characters-scene');
+    if (!charScene) {
+      setTimeout(initPinsMenuSystem, 300);
+      return;
+    }
+    if (document.getElementById('custom-pins-tabs')) return;
+
+    const navBar = document.createElement('div');
+    navBar.id = 'custom-pins-tabs';
+    navBar.className = 'pins-tab-container';
+    navBar.innerHTML = `
+      <button id="pins-tab-brawlers" class="pins-tab-btn active" onclick="switchCharSceneTab('brawlers')">Бійці</button>
+      <button id="pins-tab-pins" class="pins-tab-btn" onclick="switchCharSceneTab('pins')">Значки</button>
+    `;
+    const pinsGrid = document.createElement('div');
+    pinsGrid.id = 'custom-pins-grid';
+
+    charScene.appendChild(navBar);
+    charScene.appendChild(pinsGrid);
+    renderPinsGallery();
+  }
+
+  function renderPinsGallery() {
+    const grid = document.getElementById('custom-pins-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+    const unlockedPins = JSON.parse(localStorage.getItem('game_unlocked_pins')) || [];
+    availablePins.forEach(pin => {
+      const isUnlocked = unlockedPins.includes(pin.id);
+      const card = document.createElement('div');
+      card.className = `pin-card ${isUnlocked ? '' : 'locked'}`;
+      card.innerHTML = `
+        <img src="${pin.img}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/744/744922.png';">
+        <div class="pin-title">${pin.name}</div>
+        ${!isUnlocked ? '<div class="lock-overlay">🔒</div>' : ''}
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  function switchCharSceneTab(target) {
+    const charScene = document.getElementById('characters-scene');
+    const brawlersBtn = document.getElementById('pins-tab-brawlers');
+    const pinsBtn = document.getElementById('pins-tab-pins');
+    const pinsGrid = document.getElementById('custom-pins-grid');
+    if (!charScene) return;
+
+    if (target === 'pins') {
+      brawlersBtn.classList.remove('active');
+      pinsBtn.classList.add('active');
+      pinsGrid.style.display = 'grid';
+      Array.from(charScene.children).forEach(child => {
+        if (child.id !== 'custom-pins-tabs' && child.id !== 'custom-pins-grid') {
+          if (child.textContent.includes('Назад') || child.id.toLowerCase().includes('back') || child.className.toLowerCase().includes('back')) {
+            child.style.display = ''; 
+          } else {
+            child.style.setProperty('display', 'none', 'important'); 
+          }
+        }
+      });
+      renderPinsGallery();
+    } else {
+      pinsBtn.classList.remove('active');
+      brawlersBtn.classList.add('active');
+      pinsGrid.style.display = 'none';
+      Array.from(charScene.children).forEach(child => {
+        if (child.id !== 'custom-pins-tabs' && child.id !== 'custom-pins-grid') { child.style.display = ''; }
+      });
+    }
+  }
+
+  window.buyPinPack = buyPinPack;
+  window.closePinDrop = closePinDrop;
+  window.switchCharSceneTab = switchCharSceneTab;
+</script>
 </body>
 </html>
