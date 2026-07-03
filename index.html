@@ -9,14 +9,59 @@
 
 <script>
   // ============================================================
-  // НАДНАДІЙНИЙ ПЕРЕХОПЛЮВАЧ ПОМИЛОК (ХОВАЄ ВСІ ВІКНА ПОМИЛОК)
+  // НАДНАДІЙНИЙ ПЕРЕХОПЛЮВАЧ ПОМИЛОК
   // ============================================================
   window.onerror = function(message, source, lineno, colno, error) {
     console.log('Системне глушіння помилки:', message);
-    return true; // WebView DroidScript ніколи не покаже Script Error вікно
+    return true;
   };
 
-  // Завантажуємо оригінальний файл гри з GitHub
+  // ============================================================
+  // РЕАЛЬНИЙ ТАЙМЕР ДО 12:00 ЧЕРЕЗ 14 ДНІВ 23 ГОДИНИ 17 ХВИЛИН
+  // ============================================================
+  function startRealTimer() {
+    const now = new Date();
+    let targetDate = new Date(now);
+    targetDate.setDate(targetDate.getDate() + 14);
+    targetDate.setHours(12, 0, 0, 0);
+    
+    if (now.getHours() >= 12) {
+      targetDate.setDate(targetDate.getDate() + 1);
+    }
+
+    window._seasonEndDate = targetDate;
+
+    function updateTimer() {
+      const now = new Date();
+      let diff = targetDate - now;
+
+      if (diff <= 0) {
+        const newTarget = new Date(now);
+        newTarget.setDate(newTarget.getDate() + 14);
+        newTarget.setHours(12, 0, 0, 0);
+        window._seasonEndDate = newTarget;
+        targetDate = newTarget;
+        diff = targetDate - now;
+      }
+
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      const timerEl = document.getElementById('season-timer-display');
+      if (timerEl) {
+        timerEl.textContent = `${days}d ${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}min`;
+      }
+    }
+
+    updateTimer();
+    setInterval(updateTimer, 1000);
+  }
+
+  // ============================================================
+  // ЗАВАНТАЖЕННЯ ОРИГІНАЛЬНОЇ ГРИ
+  // ============================================================
   fetch('https://raw.githubusercontent.com/haha1488top-source/brawl-simulator-ua/4048e8717baef1d86372e970de2108cff41906cf/index.html')
     .then(r => r.text())
     .then(html => {
@@ -25,7 +70,6 @@
       document.write(html);
       document.close();
 
-      // Старт модифікацій інтерфейсу
       setTimeout(() => {
         injectDynamicStyles();
         startBrawlidaysHiding();
@@ -33,14 +77,80 @@
         initPinDropOverlay(); 
         injectShopOffers(); 
         initPinsMenuSystem(); 
+        injectSeasonTimerInPass(); // Нова функція для Brawl Pass
+        startRealTimer();
         
-        // Фоновий цикл автофіксу
         setInterval(() => {
           runAutoFixLogic();
           injectAutoFixButtonOnly(); 
         }, 1500);
       }, 1000);
     });
+
+  // ============================================================
+  // ДОДАВАННЯ ТАЙМЕРА В BRAWL PASS НАД КНОПКОЮ КУПИТИ
+  // ============================================================
+  function injectSeasonTimerInPass() {
+    // Шукаємо сцену Brawl Pass
+    const passScene = document.getElementById('brawl-pass-scene') || document.querySelector('.brawl-pass-scene');
+    if (!passScene) {
+      setTimeout(injectSeasonTimerInPass, 500);
+      return;
+    }
+
+    // Шукаємо кнопку покупки
+    let buyBtn = passScene.querySelector('button') || passScene.querySelector('[class*="buy"]');
+    if (!buyBtn) {
+      // Шукаємо будь-який елемент із ціною
+      const allElements = passScene.querySelectorAll('*');
+      for (let el of allElements) {
+        if (el.textContent && el.textContent.includes('★') && el.textContent.includes('Купити')) {
+          buyBtn = el;
+          break;
+        }
+      }
+    }
+
+    if (!buyBtn) {
+      setTimeout(injectSeasonTimerInPass, 500);
+      return;
+    }
+
+    // Перевіряємо чи вже є наш таймер
+    if (document.getElementById('custom-pass-timer')) return;
+
+    // Створюємо компактний таймер
+    const timerEl = document.createElement('div');
+    timerEl.id = 'custom-pass-timer';
+    timerEl.style.cssText = `
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 6px;
+      padding: 4px 12px;
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 215, 0, 0.25);
+      font-size: 13px;
+      font-weight: 700;
+      color: #ffd700;
+      font-family: monospace;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.15);
+      width: fit-content;
+      margin-left: auto;
+      margin-right: auto;
+    `;
+
+    timerEl.innerHTML = `
+      <span style="color: #888; font-size: 10px; font-weight: 400;">⏳</span>
+      <span id="season-timer-display" style="color: #fff;">14d 23h 17min</span>
+    `;
+
+    // Вставляємо ПЕРЕД кнопкою
+    buyBtn.parentNode.insertBefore(timerEl, buyBtn);
+  }
 
   // ============================================================
   // РОЗУМНИЙ ГЛИБОКИЙ СКАНЕР ТА СПИСУВАННЯ КРИСТАЛІВ
@@ -51,18 +161,15 @@
     let jsonKey = null;
     let jsonProp = null;
 
-    // Крок 1: Шукаємо у глобальних змінних вікна
     if (window.gems !== undefined) { currentGems = parseInt(window.gems); foundType = 'window_gems'; }
     else if (window.player && window.player.gems !== undefined) { currentGems = parseInt(window.player.gems); foundType = 'player_gems'; }
     else if (window.crystals !== undefined) { currentGems = parseInt(window.crystals); foundType = 'window_crystals'; }
     
-    // Крок 2: Шукаємо у прямих ключах localStorage
     if (!foundType) {
       if (localStorage.getItem('gems') !== null) { currentGems = parseInt(localStorage.getItem('gems')); foundType = 'local_gems'; }
       else if (localStorage.getItem('crystals') !== null) { currentGems = parseInt(localStorage.getItem('crystals')); foundType = 'local_crystals'; }
     }
 
-    // Крок 3: Шукаємо всередині збережених JSON-об'єктів (глибокий парсинг сховища)
     if (!foundType || currentGems === 0) {
       for (let i = 0; i < localStorage.length; i++) {
         let key = localStorage.key(i);
@@ -85,13 +192,12 @@
       }
     }
 
-    // Крок 4: АВАРІЙНИЙ ХУК — Зчитуємо баланс прямо з тексту меню гри, якщо дані засекречені
     if (!foundType || currentGems === 0) {
       const gemSelectors = ['#gems', '#gem-count', '.gem-count', '.gems', '#player-gems', '#money', '.crystals-count', '[class*="gem"]', '[id*="gem"]'];
       for (let sel of gemSelectors) {
         let el = document.querySelector(sel);
         if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
-          let textNum = parseInt(el.textContent.replace(/\D/g, '')); // Витягуємо суто цифри
+          let textNum = parseInt(el.textContent.replace(/\D/g, ''));
           if (!isNaN(textNum) && textNum > 0) {
             currentGems = textNum;
             foundType = 'dom_fallback';
@@ -101,16 +207,13 @@
       }
     }
 
-    // Перевірка, чи гравцеві вистачає коштів
     if (currentGems < amount) {
       alert(`❌ Недостатньо кристалів!\n\nПотрібно: ${amount} 💎\nУ тебе є: ${currentGems} 💎`);
       return false;
     }
 
-    // Розрахунок нового балансу
     let newGems = currentGems - amount;
     
-    // Записуємо оновлені дані туди, звідки взяли
     if (foundType === 'window_gems') window.gems = newGems;
     else if (foundType === 'player_gems') window.player.gems = newGems;
     else if (foundType === 'window_crystals') window.crystals = newGems;
@@ -124,11 +227,9 @@
       } catch(e) {}
     }
 
-    // Про всяк випадок дублюємо в загальні змінні
     if (window.gems !== undefined) window.gems = newGems;
     if (window.player && window.player.gems !== undefined) window.player.gems = newGems;
 
-    // Миттєво оновлюємо ВСІ цифри на екрані гри в реальному часі
     const allSelectors = ['#gems', '#gem-count', '.gem-count', '.gems', '#player-gems', '#money', '.crystals-count', '[class*="gem"]', '[id*="gem"]'];
     allSelectors.forEach(sel => {
       document.querySelectorAll(sel).forEach(el => {
@@ -140,7 +241,6 @@
       });
     });
 
-    // Викликаємо системні функції збереження та оновлення оригінальної гри
     if (typeof updateUI === 'function') updateUI();
     if (typeof updateHUD === 'function') updateHUD();
     if (typeof saveGame === 'function') saveGame();
@@ -395,7 +495,7 @@
   }
 
   // ============================================================
-  // ДОДАВАННЯ ТОВАРІВ У МАГАЗИН З ПЕРЕВІРКОЮ БАЛАНСУ
+  // ДОДАВАННЯ ТОВАРІВ У МАГАЗИН
   // ============================================================
   function injectShopOffers() {
     const shopScene = document.getElementById('shop-scene');
@@ -403,7 +503,6 @@
     const container = getShopContainer(shopScene);
     if (document.getElementById('custom-pin-pack')) return;
 
-    // Товар Набір значків (19 гемів)
     const pinPackCard = document.createElement('div');
     pinPackCard.id = 'custom-pin-pack';
     pinPackCard.style.cssText = `
@@ -419,7 +518,6 @@
     `;
     pinPackCard.onclick = buyPinPack;
 
-    // Товар Кроу (49 гемів)
     const crowCard = document.createElement('div');
     crowCard.id = 'custom-skin-crow';
     crowCard.style.cssText = pinPackCard.style.cssText.replace(/#9c27b0/g, '#4a86e8').replace(/#2b114c/g, '#0a1a2e').replace(/#4a1f80/g, '#0a2a4a');
@@ -494,7 +592,7 @@
   }
 
   // ============================================================
-  // СИСТЕМА ЗНАЧКІВ ТА ГАЛЕРЕЇ З ОПЛАТОЮ В ГЕМАХ
+  // СИСТЕМА ЗНАЧКІВ
   // ============================================================
   const availablePins = [
     { id: "pin_juice", name: "Пін Сік (Carreta Juice)", img: "Img/emoji_carreta_juice.png" },
