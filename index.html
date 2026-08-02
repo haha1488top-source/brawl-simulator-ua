@@ -17,46 +17,121 @@
   };
 
   // ============================================================
-  // РЕАЛЬНИЙ ТАЙМЕР ДО 12:00 ЧЕРЕЗ 14 ДНІВ 23 ГОДИНИ 17 ХВИЛИН
+  // СИСТЕМА 4-Х СЛОТІВ НАГОРОД (ЩОГОДИННІ)
   // ============================================================
-  function startRealTimer() {
+  let currentSlotRewards = [];
+  let lastSlotUpdateHour = -1;
+
+  const slotRewardPool = [
+    { type: 'coins', amount: 10, icon: '🪙', name: '10 монет' },
+    { type: 'coins', amount: 25, icon: '🪙', name: '25 монет' },
+    { type: 'coins', amount: 50, icon: '🪙', name: '50 монет' },
+    { type: 'coins', amount: 100, icon: '🪙', name: '100 монет' },
+    { type: 'coins', amount: 200, icon: '🪙', name: '200 монет' },
+    { type: 'gems', amount: 3, icon: '💎', name: '3 кристали' },
+    { type: 'gems', amount: 5, icon: '💎', name: '5 кристалів' },
+    { type: 'gems', amount: 10, icon: '💎', name: '10 кристалів' },
+    { type: 'gems', amount: 15, icon: '💎', name: '15 кристалів' },
+    { type: 'skin', name: 'Рідкісний скін', icon: '🎨' },
+    { type: 'skin', name: 'Епічний скін', icon: '🎭' },
+    { type: 'pin', name: 'Епічний пін', icon: '📌' },
+    { type: 'pin', name: 'Легендарний пін', icon: '🌟' },
+    { type: 'box', name: 'Звичайний ящик', icon: '📦', boxImg: 'Img/box.png' },
+    { type: 'box', name: 'Звичайний ящик', icon: '📦', boxImg: 'Img/box.png' },
+    { type: 'box', name: 'Звичайний ящик', icon: '📦', boxImg: 'Img/box.png' },
+    { type: 'big_box', name: 'Великий ящик', icon: '📦', boxImg: 'Img/big_box.png' },
+    { type: 'big_box', name: 'Великий ящик', icon: '📦', boxImg: 'Img/big_box.png' },
+    { type: 'big_box', name: 'Великий ящик', icon: '📦', boxImg: 'Img/big_box.png' },
+    { type: 'mega_box', name: 'Мега ящик', icon: '📦', boxImg: 'Img/bigbox.png' },
+    { type: 'mega_box', name: 'Мега ящик', icon: '📦', boxImg: 'Img/bigbox.png' },
+  ];
+
+  function generateSlotRewards() { /* (код без змін) */ 
     const now = new Date();
-    let targetDate = new Date(now);
-    targetDate.setDate(targetDate.getDate() + 14);
-    targetDate.setHours(12, 0, 0, 0);
-    
-    if (now.getHours() >= 12) {
-      targetDate.setDate(targetDate.getDate() + 1);
+    const hourKey = now.getFullYear() + '-' + now.getMonth() + '-' + now.getDate() + '-' + now.getHours() + '-' + Math.floor(Math.random() * 1000000);
+    let seed = 0;
+    for (let i = 0; i < hourKey.length; i++) { seed = ((seed << 5) - seed) + hourKey.charCodeAt(i); seed = seed & seed; }
+    function seededRandom(seedNum) { let s = seedNum * 9301 + 49297; s = (s * 2333 + 12345) % 65536; return s / 65536; }
+    const rewards = []; const usedIndices = new Set();
+    for (let i = 0; i < 4; i++) {
+      let index; let attempts = 0;
+      do {
+        const randVal = seededRandom(seed + i * 1000 + attempts * 137 + Math.random() * 10000);
+        index = Math.floor(randVal * slotRewardPool.length);
+        attempts++;
+      } while (usedIndices.has(index) && attempts < 50);
+      usedIndices.add(index);
+      const reward = { ...slotRewardPool[index], slot: i + 1 };
+      if (i === 3) { reward.bonus = true; reward.name = reward.name + ' ★'; }
+      rewards.push(reward);
     }
+    return rewards;
+  }
 
-    window._seasonEndDate = targetDate;
+  function updateSlotRewards() {
+    const now = new Date(); const hourNum = now.getHours();
+    if (lastSlotUpdateHour !== hourNum) {
+      currentSlotRewards = generateSlotRewards();
+      lastSlotUpdateHour = hourNum;
+      localStorage.setItem('slot_rewards_data', JSON.stringify({ hour: hourNum, rewards: currentSlotRewards, timestamp: now.getTime() }));
+      renderMainMenuSlots();
+    }
+  }
 
-    function updateTimer() {
-      const now = new Date();
-      let diff = targetDate - now;
-
-      if (diff <= 0) {
-        const newTarget = new Date(now);
-        newTarget.setDate(newTarget.getDate() + 14);
-        newTarget.setHours(12, 0, 0, 0);
-        window._seasonEndDate = newTarget;
-        targetDate = newTarget;
-        diff = targetDate - now;
-      }
-
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-      const timerEl = document.getElementById('season-timer-display');
-      if (timerEl) {
-        timerEl.textContent = `${days}d ${String(hours).padStart(2, '0')}h ${String(minutes).padStart(2, '0')}min`;
+  function loadSlotRewards() {
+    const saved = localStorage.getItem('slot_rewards_data'); const now = new Date(); const hourNum = now.getHours();
+    if (saved) {
+      const data = JSON.parse(saved);
+      if (data.hour === hourNum && (now.getTime() - data.timestamp) < 3600000) {
+        currentSlotRewards = data.rewards; lastSlotUpdateHour = hourNum; renderMainMenuSlots(); return;
       }
     }
+    updateSlotRewards();
+  }
 
-    updateTimer();
-    setInterval(updateTimer, 1000);
+  function renderMainMenuSlots() {
+    let slotsFound = document.querySelectorAll('.reward-slot, .box-slot, [class*="slot"], [class*="box"]');
+    if (slotsFound.length < 4) {
+      const playBtn = document.querySelector('button:not([class*="settings"])');
+      if (playBtn) {
+        const parent = playBtn.parentElement || playBtn.parentNode;
+        if (parent) { const children = parent.children; if (children.length >= 4) { slotsFound = Array.from(children).slice(0, 4); } }
+      }
+    }
+    if (!slotsFound || slotsFound.length < 4) { return; }
+    for (let i = 0; i < 4; i++) {
+      if (i < currentSlotRewards.length) {
+        const reward = currentSlotRewards[i]; const slotEl = slotsFound[i];
+        if (slotEl) {
+          const isBox = reward.type === 'box' || reward.type === 'big_box' || reward.type === 'mega_box';
+          if (isBox && reward.boxImg) {
+            slotEl.innerHTML = `<img src="${reward.boxImg}" style="width:100%; height:100%; object-fit:contain; display:block;" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\'font-size:30px; text-align:center; width:100%;\'>📦</div>';">`;
+          } else {
+            slotEl.innerHTML = `<div style="font-size:32px; display:flex; justify-content:center; align-items:center; height:100%; width:100%;">${reward.icon}</div>`;
+          }
+        }
+      }
+    }
+  }
+
+  function showSlotRewards() {
+    loadSlotRewards();
+    const wins = parseInt(localStorage.getItem('slot_wins_count') || '0');
+    const slotIndex = wins % 4;
+    const reward = currentSlotRewards[slotIndex] || currentSlotRewards[0];
+    localStorage.setItem('slot_wins_count', String(wins + 1));
+    const overlay = document.createElement('div');
+    overlay.id = 'slot-rewards-overlay';
+    overlay.style.cssText = `position: fixed; inset: 0; background: rgba(0,0,0,0.92); display: flex; align-items: center; justify-content: center; flex-direction: column; z-index: 30000; color: #fff; text-align: center; font-family: Arial, sans-serif; animation: fadeIn 0.3s ease;`;
+    let slotsHTML = '';
+    currentSlotRewards.forEach((r, idx) => {
+      const isActive = idx === slotIndex; const isBox = r.type === 'box' || r.type === 'big_box' || r.type === 'mega_box'; const boxImg = r.boxImg || 'Img/box.png';
+      slotsHTML += `<div style="flex: 1; background: ${isActive ? 'rgba(255,215,0,0.15)' : 'rgba(0,0,0,0.5)'}; border: ${isActive ? '3px solid #ffd700' : '2px solid rgba(255,255,255,0.1)'}; border-radius: 12px; padding: 10px 6px; min-width: 60px; transition: all 0.3s; position: relative; ${isActive ? 'box-shadow: 0 0 30px rgba(255,215,0,0.2);' : ''}"><div style="font-size: 10px; color: ${isActive ? '#ffd700' : '#666'}; font-weight: 700; margin-bottom: 4px;">#${r.slot}</div><div style="font-size: 28px; line-height: 1.2;">${isBox ? `<img src="${boxImg}" style="width:40px; height:40px; object-fit:contain;" onerror="this.style.display='none'; this.parentElement.textContent='📦';">` : r.icon}</div><div style="font-size: 8px; color: ${isActive ? '#fff' : '#888'}; font-weight: 600; margin-top: 4px; max-width: 60px; word-wrap: break-word;">${r.name.length > 12 ? r.name.slice(0, 10) + '…' : r.name}</div>${isBox && isActive ? `<div style="position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); border-radius: 8px; padding: 2px 8px; font-size: 8px; color: #ffd700; white-space: nowrap;"><img src="${boxImg}" style="width: 16px; height: 16px; object-fit: contain; vertical-align: middle;"></div>` : ''}${r.bonus ? `<div style="position: absolute; top: -6px; right: -6px; background: #ff6b00; color: #fff; font-size: 8px; font-weight: 900; padding: 1px 6px; border-radius: 8px; box-shadow: 0 0 10px rgba(255,100,0,0.5);">★</div>` : ''}</div>`;
+    });
+    const isBoxReward = reward.type === 'box' || reward.type === 'big_box' || reward.type === 'mega_box'; const rewardBoxImg = reward.boxImg || 'Img/box.png';
+    overlay.innerHTML = `<div style="background: linear-gradient(135deg, #0a0a1a, #1a0a2e); border: 3px solid #ffd700; border-radius: 24px; padding: 25px 20px 20px 20px; max-width: 420px; width: 92%; box-shadow: 0 0 50px rgba(255,215,0,0.15);"><div style="font-size: 16px; color: #ffd700; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 12px;">🏆 НАГОРОДИ ЗА ПЕРЕМОГИ</div><div style="display: flex; gap: 6px; justify-content: center; margin-bottom: 16px;">${slotsHTML}</div><div style="background: rgba(255,215,0,0.05); border: 2px solid rgba(255,215,0,0.2); border-radius: 16px; padding: 16px; margin-bottom: 14px;"><div style="font-size: 13px; color: #aaa; margin-bottom: 4px;">ВИГРАНО:</div><div style="font-size: 42px; line-height: 1.2;">${isBoxReward ? `<img src="${rewardBoxImg}" style="width:60px; height:60px; object-fit:contain; filter: drop-shadow(0 0 20px rgba(255,215,0,0.2));" onerror="this.style.display='none'; this.parentElement.textContent='📦';">` : reward.icon}</div><div style="font-size: 20px; font-weight: 900; color: #fff; margin: 4px 0;">${reward.name}</div><div style="font-size: 13px; color: #aaa;">${reward.type === 'coins' ? `+${reward.amount} монет` : reward.type === 'gems' ? `+${reward.amount} кристалів` : isBoxReward ? '🎁 Відкрий ящик!' : 'Додано до колекції'}</div></div><button onclick="this.closest('#slot-rewards-overlay').remove()" style="background: linear-gradient(to bottom, #ffd700, #f57c00); color: #000; border: none; font-weight: 900; padding: 12px 30px; border-radius: 14px; font-size: 17px; cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 0 #b35900; width: 100%;">ЗАБРАТИ НАГОРОДУ</button><div style="font-size: 11px; color: #555; margin-top: 10px;">Наступна нагорода: ${currentSlotRewards[(slotIndex + 1) % 4]?.name || '—'}</div></div>`;
+    if (!document.getElementById('slot-anim-style')) { const style = document.createElement('style'); style.id = 'slot-anim-style'; style.textContent = `@keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }`; document.head.appendChild(style); }
+    document.body.appendChild(overlay);
   }
 
   // ============================================================
@@ -77,9 +152,22 @@
         initPinDropOverlay(); 
         injectShopOffers(); 
         initPinsMenuSystem(); 
-        injectSeasonTimerInPass(); // Нова функція для Brawl Pass
-        startRealTimer();
         
+        // ВИКЛИКАЄМО ФУНКЦІЇ З bp_season.js
+        injectSeasonTimerInPass(); 
+        startRealTimer();
+        initAutoRemove();
+        
+        loadSlotRewards();
+        hookVictoryReward();
+
+        setInterval(() => {
+          const now = new Date();
+          if (lastSlotUpdateHour !== now.getHours()) {
+            updateSlotRewards();
+          }
+        }, 60000);
+
         setInterval(() => {
           runAutoFixLogic();
           injectAutoFixButtonOnly(); 
@@ -88,88 +176,46 @@
     });
 
   // ============================================================
-  // ДОДАВАННЯ ТАЙМЕРА В BRAWL PASS НАД КНОПКОЮ КУПИТИ
+  // ПЕРЕХОПЛЕННЯ ПЕРЕМОГИ (ЗАЛИШАЄТЬСЯ ТУТ)
   // ============================================================
-  function injectSeasonTimerInPass() {
-    // Шукаємо сцену Brawl Pass
-    const passScene = document.getElementById('brawl-pass-scene') || document.querySelector('.brawl-pass-scene');
-    if (!passScene) {
-      setTimeout(injectSeasonTimerInPass, 500);
-      return;
-    }
-
-    // Шукаємо кнопку покупки
-    let buyBtn = passScene.querySelector('button') || passScene.querySelector('[class*="buy"]');
-    if (!buyBtn) {
-      // Шукаємо будь-який елемент із ціною
-      const allElements = passScene.querySelectorAll('*');
-      for (let el of allElements) {
-        if (el.textContent && el.textContent.includes('★') && el.textContent.includes('Купити')) {
-          buyBtn = el;
-          break;
-        }
+  function hookVictoryReward() {
+    const originalAlert = window.alert;
+    window.alert = function(message) {
+      if (typeof message === 'string' && (message.includes('перемога') || message.includes('victory') || message.includes('Ви виграли') || message.includes('You win'))) {
+        setTimeout(showSlotRewards, 500);
       }
+      return originalAlert.apply(this, arguments);
+    };
+    const originalWin = window.winGame || window.victory || window.win;
+    if (typeof originalWin === 'function') {
+      window.winGame = function() { const result = originalWin.apply(this, arguments); setTimeout(showSlotRewards, 500); return result; };
     }
-
-    if (!buyBtn) {
-      setTimeout(injectSeasonTimerInPass, 500);
-      return;
-    }
-
-    // Перевіряємо чи вже є наш таймер
-    if (document.getElementById('custom-pass-timer')) return;
-
-    // Створюємо компактний таймер
-    const timerEl = document.createElement('div');
-    timerEl.id = 'custom-pass-timer';
-    timerEl.style.cssText = `
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      margin-bottom: 6px;
-      padding: 4px 12px;
-      background: rgba(0, 0, 0, 0.4);
-      border-radius: 8px;
-      border: 1px solid rgba(255, 215, 0, 0.25);
-      font-size: 13px;
-      font-weight: 700;
-      color: #ffd700;
-      font-family: monospace;
-      letter-spacing: 0.5px;
-      text-shadow: 0 0 10px rgba(255, 215, 0, 0.15);
-      width: fit-content;
-      margin-left: auto;
-      margin-right: auto;
-    `;
-
-    timerEl.innerHTML = `
-      <span style="color: #888; font-size: 10px; font-weight: 400;">⏳</span>
-      <span id="season-timer-display" style="color: #fff;">14d 23h 17min</span>
-    `;
-
-    // Вставляємо ПЕРЕД кнопкою
-    buyBtn.parentNode.insertBefore(timerEl, buyBtn);
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList' || mutation.type === 'attributes') {
+          const victoryElements = document.querySelectorAll('[class*="victory"], [id*="victory"], [class*="win"], [id*="win"], [class*="перемог"], [id*="перемог"], .battle-end, .result-screen');
+          if (victoryElements.length > 0) {
+            const hasWinText = Array.from(victoryElements).some(el => el.textContent && (el.textContent.toLowerCase().includes('перемог') || el.textContent.toLowerCase().includes('victory') || el.textContent.toLowerCase().includes('win')));
+            if (hasWinText) { setTimeout(showSlotRewards, 600); }
+          }
+        }
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['class', 'style', 'display'] });
   }
 
   // ============================================================
-  // РОЗУМНИЙ ГЛИБОКИЙ СКАНЕР ТА СПИСУВАННЯ КРИСТАЛІВ
+  // ІНШІ ФУНКЦІЇ (МАГАЗИН, ПІНИ, СТИЛІ) - ЗАЛИШАЮТЬСЯ ТУТ
   // ============================================================
   function spendGems(amount) {
-    let currentGems = 0;
-    let foundType = null;
-    let jsonKey = null;
-    let jsonProp = null;
-
+    let currentGems = 0; let foundType = null; let jsonKey = null; let jsonProp = null;
     if (window.gems !== undefined) { currentGems = parseInt(window.gems); foundType = 'window_gems'; }
     else if (window.player && window.player.gems !== undefined) { currentGems = parseInt(window.player.gems); foundType = 'player_gems'; }
     else if (window.crystals !== undefined) { currentGems = parseInt(window.crystals); foundType = 'window_crystals'; }
-    
     if (!foundType) {
       if (localStorage.getItem('gems') !== null) { currentGems = parseInt(localStorage.getItem('gems')); foundType = 'local_gems'; }
       else if (localStorage.getItem('crystals') !== null) { currentGems = parseInt(localStorage.getItem('crystals')); foundType = 'local_crystals'; }
     }
-
     if (!foundType || currentGems === 0) {
       for (let i = 0; i < localStorage.length; i++) {
         let key = localStorage.key(i);
@@ -177,277 +223,118 @@
           let data = JSON.parse(localStorage.getItem(key));
           if (data && typeof data === 'object') {
             let possibleProps = ['gems', 'gem', 'crystals', 'crystal', 'money', 'balance', 'score'];
-            for (let prop of possibleProps) {
-              if (data[prop] !== undefined) {
-                currentGems = parseInt(data[prop]);
-                foundType = 'json_local';
-                jsonKey = key;
-                jsonProp = prop;
-                break;
-              }
-            }
+            for (let prop of possibleProps) { if (data[prop] !== undefined) { currentGems = parseInt(data[prop]); foundType = 'json_local'; jsonKey = key; jsonProp = prop; break; } }
           }
         } catch(e) {}
         if (foundType === 'json_local') break;
       }
     }
-
     if (!foundType || currentGems === 0) {
       const gemSelectors = ['#gems', '#gem-count', '.gem-count', '.gems', '#player-gems', '#money', '.crystals-count', '[class*="gem"]', '[id*="gem"]'];
       for (let sel of gemSelectors) {
         let el = document.querySelector(sel);
         if (el && el.offsetWidth > 0 && el.offsetHeight > 0) {
           let textNum = parseInt(el.textContent.replace(/\D/g, ''));
-          if (!isNaN(textNum) && textNum > 0) {
-            currentGems = textNum;
-            foundType = 'dom_fallback';
-            break;
-          }
+          if (!isNaN(textNum) && textNum > 0) { currentGems = textNum; foundType = 'dom_fallback'; break; }
         }
       }
     }
-
-    if (currentGems < amount) {
-      alert(`❌ Недостатньо кристалів!\n\nПотрібно: ${amount} 💎\nУ тебе є: ${currentGems} 💎`);
-      return false;
-    }
-
+    if (currentGems < amount) { alert(`❌ Недостатньо кристалів!\n\nПотрібно: ${amount} 💎\nУ тебе є: ${currentGems} 💎`); return false; }
     let newGems = currentGems - amount;
-    
     if (foundType === 'window_gems') window.gems = newGems;
     else if (foundType === 'player_gems') window.player.gems = newGems;
     else if (foundType === 'window_crystals') window.crystals = newGems;
     else if (foundType === 'local_gems') localStorage.setItem('gems', newGems);
     else if (foundType === 'local_crystals') localStorage.setItem('crystals', newGems);
     else if (foundType === 'json_local' && jsonKey && jsonProp) {
-      try {
-        let data = JSON.parse(localStorage.getItem(jsonKey));
-        data[jsonProp] = newGems;
-        localStorage.setItem(jsonKey, JSON.stringify(data));
-      } catch(e) {}
+      try { let data = JSON.parse(localStorage.getItem(jsonKey)); data[jsonProp] = newGems; localStorage.setItem(jsonKey, JSON.stringify(data)); } catch(e) {}
     }
-
     if (window.gems !== undefined) window.gems = newGems;
     if (window.player && window.player.gems !== undefined) window.player.gems = newGems;
-
     const allSelectors = ['#gems', '#gem-count', '.gem-count', '.gems', '#player-gems', '#money', '.crystals-count', '[class*="gem"]', '[id*="gem"]'];
     allSelectors.forEach(sel => {
       document.querySelectorAll(sel).forEach(el => {
-        if (el.children.length === 0 || el.textContent.trim().match(/^\d+$/)) {
-          el.textContent = newGems;
-        } else {
-          el.innerHTML = el.innerHTML.replace(/\d+/, newGems);
-        }
+        if (el.children.length === 0 || el.textContent.trim().match(/^\d+$/)) { el.textContent = newGems; } else { el.innerHTML = el.innerHTML.replace(/\d+/, newGems); }
       });
     });
-
     if (typeof updateUI === 'function') updateUI();
     if (typeof updateHUD === 'function') updateHUD();
     if (typeof saveGame === 'function') saveGame();
     if (typeof save === 'function') save();
-
     return true;
   }
 
-  // ============================================================
-  // АВТОМАТИЧНИЙ ФІКС ДУБЛІВ ТА БАНЕРІВ
-  // ============================================================
   function runAutoFixLogic() {
     startBrawlidaysHiding();
-    
     const shopScene = document.getElementById('shop-scene');
     if (!shopScene) return;
-    
     const container = getShopContainer(shopScene);
     if (!container) return;
-
     const allShopElements = container.children;
     for (let i = allShopElements.length - 1; i >= 0; i--) {
       const el = allShopElements[i];
       if (el.id === 'custom-skin-offer-banner' || el.id === 'custom-pin-pack' || el.id === 'custom-skin-crow') continue;
-      
-      const text = el.textContent || '';
-      const html = el.innerHTML || '';
-      
-      if (
-        text.includes('Кансай') || 
-        text.includes('Булл') || 
-        html.includes('bull_kansai') || 
-        text.includes('Мейверік') || 
-        html.includes('crow_maverick')
-      ) {
-        el.remove();
-      }
+      const text = el.textContent || ''; const html = el.innerHTML || '';
+      if (text.includes('Кансай') || text.includes('Булл') || html.includes('bull_kansai') || text.includes('Мейверік') || html.includes('crow_maverick')) { el.remove(); }
     }
-
     const banner = document.getElementById('custom-skin-offer-banner');
-    if (!banner) {
-      initSkinOfferGridInline();
-    } else if (container.firstChild !== banner) {
-      container.insertBefore(banner, container.firstChild);
-    }
-    
-    if (!document.getElementById('custom-pin-pack') || !document.getElementById('custom-skin-crow')) {
-      injectShopOffers();
-    }
+    if (!banner) initSkinOfferGridInline();
+    else if (container.firstChild !== banner) container.insertBefore(banner, container.firstChild);
+    if (!document.getElementById('custom-pin-pack') || !document.getElementById('custom-skin-crow')) injectShopOffers();
   }
 
-  // ============================================================
-  // ІНТЕГРАЦІЯ КНОПКИ ТА СТИЛІЗАЦІЯ ВНУТРІШНЬОГО UI НАЛАШТУВАНЬ
-  // ============================================================
   function injectAutoFixButtonOnly() {
     const settingsScene = document.getElementById('settings-scene') || document.getElementById('settings') || document.querySelector('.settings-scene') || document.querySelector('.settings-popup');
     if (!settingsScene) return;
-
     const innerBox = settingsScene.querySelector('div') || settingsScene;
     if (!innerBox || innerBox === settingsScene) return;
-
     const allTexts = innerBox.querySelectorAll('h1, h2, h3, div, span, p');
     allTexts.forEach(el => {
       if (el.textContent.includes('Налаштування')) {
-        el.style.setProperty('color', '#fff', 'important');
-        el.style.setProperty('font-size', '24px', 'important');
-        el.style.setProperty('font-weight', '900', 'important');
-        el.style.setProperty('text-transform', 'uppercase', 'important');
-        el.style.setProperty('text-shadow', '2px 2px 0px #000', 'important');
-        el.style.setProperty('text-align', 'center', 'important');
+        el.style.setProperty('color', '#fff', 'important'); el.style.setProperty('font-size', '24px', 'important'); el.style.setProperty('font-weight', '900', 'important');
+        el.style.setProperty('text-transform', 'uppercase', 'important'); el.style.setProperty('text-shadow', '2px 2px 0px #000', 'important'); el.style.setProperty('text-align', 'center', 'important');
       }
-      if (el.textContent.includes('Музика') || el.textContent.includes('Звук')) {
-        el.style.setProperty('color', '#fff', 'important');
-        el.style.setProperty('font-weight', '900', 'important');
-        el.style.setProperty('text-shadow', '1px 1px 1px #000', 'important');
-      }
+      if (el.textContent.includes('Музика') || el.textContent.includes('Звук')) { el.style.setProperty('color', '#fff', 'important'); el.style.setProperty('font-weight', '900', 'important'); el.style.setProperty('text-shadow', '1px 1px 1px #000', 'important'); }
     });
-
     const allButtons = innerBox.querySelectorAll('button, div[onclick]');
     let backBtn = null;
-    
     allButtons.forEach(b => {
       if (b.id === 'autofix-settings-btn') return;
       if (b.textContent.includes('Назад') || b.textContent.includes('Закрити')) backBtn = b;
-
-      b.style.setProperty('border-radius', '12px', 'important');
-      b.style.setProperty('font-weight', '900', 'important');
-      b.style.setProperty('font-size', '13px', 'important');
-      b.style.setProperty('text-transform', 'uppercase', 'important');
-      b.style.setProperty('text-shadow', '1px 1px 1px #000', 'important');
-      b.style.setProperty('padding', '10px', 'important');
+      b.style.setProperty('border-radius', '12px', 'important'); b.style.setProperty('font-weight', '900', 'important'); b.style.setProperty('font-size', '13px', 'important');
+      b.style.setProperty('text-transform', 'uppercase', 'important'); b.style.setProperty('text-shadow', '1px 1px 1px #000', 'important'); b.style.setProperty('padding', '10px', 'important');
       b.style.setProperty('border', '3px solid #222', 'important');
-      
-      if (b.textContent.includes('Зберегти')) {
-        b.style.setProperty('background', 'linear-gradient(to bottom, #4caf50, #2e7d32)', 'important');
-        b.style.setProperty('box-shadow', '0 4px 0 #1b5e20', 'important');
-      } else if (b.textContent.includes('Стерти')) {
-        b.style.setProperty('background', 'linear-gradient(to bottom, #f44336, #d32f2f)', 'important');
-        b.style.setProperty('box-shadow', '0 4px 0 #7f1d1d', 'important');
-      } else if (b.textContent.includes('Назад') || b.textContent.includes('Закрити')) {
-        b.style.setProperty('background', 'linear-gradient(to bottom, #ff9800, #f57c00)', 'important');
-        b.style.setProperty('box-shadow', '0 4px 0 #b35900', 'important');
-      }
+      if (b.textContent.includes('Зберегти')) { b.style.setProperty('background', 'linear-gradient(to bottom, #4caf50, #2e7d32)', 'important'); b.style.setProperty('box-shadow', '0 4px 0 #1b5e20', 'important'); }
+      else if (b.textContent.includes('Стерти')) { b.style.setProperty('background', 'linear-gradient(to bottom, #f44336, #d32f2f)', 'important'); b.style.setProperty('box-shadow', '0 4px 0 #7f1d1d', 'important'); }
+      else if (b.textContent.includes('Назад') || b.textContent.includes('Закрити')) { b.style.setProperty('background', 'linear-gradient(to bottom, #ff9800, #f57c00)', 'important'); b.style.setProperty('box-shadow', '0 4px 0 #b35900', 'important'); }
     });
-
     if (document.getElementById('autofix-settings-btn')) return;
-
     const fixBtn = document.createElement('button');
-    fixBtn.id = 'autofix-settings-btn';
-    fixBtn.innerHTML = '🔧 Автофікс гри';
-    fixBtn.style.cssText = `
-      width: 100% !important;
-      background: linear-gradient(to bottom, #0288d1, #01579b) !important;
-      color: #fff !important;
-      border: 3px solid #4fc3f7 !important;
-      font-weight: 900 !important;
-      padding: 11px !important;
-      border-radius: 12px !important;
-      font-size: 13px !important;
-      text-transform: uppercase !important;
-      box-shadow: 0 4px 0 #002f6c !important;
-      cursor: pointer !important;
-      text-shadow: 1px 1px 1px #000 !important;
-      margin: 2px 0 !important;
-    `;
-
-    if (backBtn) {
-      backBtn.parentNode.insertBefore(fixBtn, backBtn);
-    } else {
-      innerBox.appendChild(fixBtn);
-    }
-
-    fixBtn.onclick = function() {
-      runAutoFixLogic();
-      alert('🔧 Автофікс виконано! Дублікати видалено, інтерфейс перевірено.');
-    };
+    fixBtn.id = 'autofix-settings-btn'; fixBtn.innerHTML = '🔧 Автофікс гри';
+    fixBtn.style.cssText = `width: 100% !important; background: linear-gradient(to bottom, #0288d1, #01579b) !important; color: #fff !important; border: 3px solid #4fc3f7 !important; font-weight: 900 !important; padding: 11px !important; border-radius: 12px !important; font-size: 13px !important; text-transform: uppercase !important; box-shadow: 0 4px 0 #002f6c !important; cursor: pointer !important; text-shadow: 1px 1px 1px #000 !important; margin: 2px 0 !important;`;
+    if (backBtn) backBtn.parentNode.insertBefore(fixBtn, backBtn);
+    else innerBox.appendChild(fixBtn);
+    fixBtn.onclick = function() { runAutoFixLogic(); alert('🔧 Автофікс виконано!'); };
   }
 
-  // ============================================================
-  // СТИЛІ ІНТЕРФЕЙСУ СЦЕН ТА КНОПОК
-  // ============================================================
   function injectDynamicStyles() {
     if (document.getElementById('custom-dynamic-styles')) return;
     const style = document.createElement('style');
     style.id = 'custom-dynamic-styles';
     style.innerHTML = `
       .hidden-brawlidays { display: none !important; }
-
-      #settings-scene, #settings, .settings-scene, .settings-popup {
-        position: fixed !important;
-        inset: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-        background: linear-gradient(135deg, #0c1428 0%, #050914 100%) !important;
-        z-index: 20000 !important;
-        transform: none !important;
-      }
-
-      #settings-scene > div, #settings > div, .settings-scene > div, .settings-popup > div {
-        position: absolute !important;
-        top: 50% !important;
-        left: 50% !important;
-        transform: translate(-50%, -50%) !important;
-        background: rgba(0, 0, 0, 0.6) !important;
-        border: 4px solid #ffaa00 !important;
-        border-radius: 24px !important;
-        padding: 22px !important;
-        width: 88% !important;
-        max-width: 340px !important;
-        box-shadow: 0 0 35px rgba(0,0,0,0.9) !important;
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 12px !important;
-        box-sizing: border-box !important;
-      }
-
-      .pins-tab-container {
-        position: absolute; top: 85px; left: 50%; transform: translateX(-50%);
-        display: flex; gap: 8px; z-index: 9999; background: rgba(0, 0, 0, 0.6);
-        padding: 5px; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-      }
-      .pins-tab-btn {
-        background: linear-gradient(to bottom, #5a5a5a, #3a3a3a); border: 3px solid #222;
-        color: #fff; font-weight: 900; padding: 6px 22px; border-radius: 10px;
-        font-size: 14px; cursor: pointer; text-transform: uppercase; text-shadow: 1px 1px 2px #000; box-shadow: 0 4px 0 #111;
-      }
-      .pins-tab-btn.active {
-        background: linear-gradient(to bottom, #ffaa00, #ff6600); border: 3px solid #ffea00; box-shadow: 0 4px 0 #b34a00;
-      }
-
-      #custom-pins-grid {
-        position: absolute; top: 145px; inset: 145px 15px 15px 15px;
-        background: linear-gradient(180deg, rgba(10,24,54,0.95) 0%, rgba(5,12,28,0.95) 100%);
-        border-radius: 16px; border: 3px solid #ffaa00; padding: 15px; overflow-y: auto;
-        display: none; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 12px; z-index: 9998; align-content: start;
-      }
-      .pin-card {
-        background: linear-gradient(135deg, #2b114c, #140526); border: 2px solid #9c27b0; border-radius: 12px; padding: 8px;
-        display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; min-height: 95px;
-      }
+      #settings-scene, #settings, .settings-scene, .settings-popup { position: fixed !important; inset: 0 !important; width: 100vw !important; height: 100vh !important; background: linear-gradient(135deg, #0c1428 0%, #050914 100%) !important; z-index: 20000 !important; transform: none !important; }
+      #settings-scene > div, #settings > div, .settings-scene > div, .settings-popup > div { position: absolute !important; top: 50% !important; left: 50% !important; transform: translate(-50%, -50%) !important; background: rgba(0, 0, 0, 0.6) !important; border: 4px solid #ffaa00 !important; border-radius: 24px !important; padding: 22px !important; width: 88% !important; max-width: 340px !important; box-shadow: 0 0 35px rgba(0,0,0,0.9) !important; display: flex !important; flex-direction: column !important; gap: 12px !important; box-sizing: border-box !important; }
+      .pins-tab-container { position: absolute; top: 85px; left: 50%; transform: translateX(-50%); display: flex; gap: 8px; z-index: 9999; background: rgba(0, 0, 0, 0.6); padding: 5px; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.1); box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+      .pins-tab-btn { background: linear-gradient(to bottom, #5a5a5a, #3a3a3a); border: 3px solid #222; color: #fff; font-weight: 900; padding: 6px 22px; border-radius: 10px; font-size: 14px; cursor: pointer; text-transform: uppercase; text-shadow: 1px 1px 2px #000; box-shadow: 0 4px 0 #111; }
+      .pins-tab-btn.active { background: linear-gradient(to bottom, #ffaa00, #ff6600); border: 3px solid #ffea00; box-shadow: 0 4px 0 #b34a00; }
+      #custom-pins-grid { position: absolute; top: 145px; inset: 145px 15px 15px 15px; background: linear-gradient(180deg, rgba(10,24,54,0.95) 0%, rgba(5,12,28,0.95) 100%); border-radius: 16px; border: 3px solid #ffaa00; padding: 15px; overflow-y: auto; display: none; grid-template-columns: repeat(auto-fill, minmax(85px, 1fr)); gap: 12px; z-index: 9998; align-content: start; }
+      .pin-card { background: linear-gradient(135deg, #2b114c, #140526); border: 2px solid #9c27b0; border-radius: 12px; padding: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; min-height: 95px; }
       .pin-card.locked { background: linear-gradient(135deg, #2a2a2a, #141414); border: 2px solid #555; }
       .pin-card img { width: 52px; height: 52px; object-fit: contain; }
       .pin-card.locked img { filter: grayscale(1) brightness(0.4); }
       .pin-card .lock-overlay { position: absolute; font-size: 20px; color: #fff; text-shadow: 0 2px 4px #000; }
       .pin-card .pin-title { color: #fff; font-size: 9px; text-align: center; margin-top: 6px; font-weight: 700; text-shadow: 1px 1px 1px #000; }
-
       #custom-skin-offer-banner { grid-column: 1 / -1 !important; width: 100%; max-width: 440px; margin: 5px auto 15px auto; display: block; box-sizing: border-box; }
       .skin-offer-container { background: linear-gradient(135deg, #16213e 0%, #0f3460 100%); border: 3px solid #ff9900; border-radius: 20px; padding: 12px; box-shadow: 0 0 15px rgba(255,153,0,0.3); box-sizing: border-box; width: 100%; }
       .offer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
@@ -462,13 +349,7 @@
       .countdown { display: flex; gap: 2px; justify-content: center; align-items: center; }
       .countdown-item { background: #000; padding: 2px 5px; border-radius: 4px; font-weight: bold; color: #ff3333; font-family: monospace; font-size: 13px; }
       .countdown-sep { color: white; font-weight: bold; font-size: 12px; }
-      
-      .buy-btn { 
-        display: flex; align-items: center; justify-content: center; gap: 6px;
-        width: 100%; padding: 8px; background: linear-gradient(to bottom, #ff9900, #cc6600); 
-        border: none; border-radius: 8px; color: white; font-weight: bold; font-size: 14px; 
-        cursor: pointer; text-transform: uppercase; box-shadow: 0 3px 0 #994d00; 
-      }
+      .buy-btn { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; padding: 8px; background: linear-gradient(to bottom, #ff9900, #cc6600); border: none; border-radius: 8px; color: white; font-weight: bold; font-size: 14px; cursor: pointer; text-transform: uppercase; box-shadow: 0 3px 0 #994d00; }
       .buy-btn img { width: 15px; height: 15px; object-fit: contain; }
     `;
     document.head.appendChild(style);
@@ -478,67 +359,36 @@
     const shopScene = document.getElementById('shop-scene');
     if (!shopScene) return;
     const selectors = ['[class*="brawliday"]', '[id*="brawliday"]', '[class*="holiday"]', '[id*="holiday"]', '.offer-brawlidays', '#brawlidays-offer', '.seasonal-offer'];
-    selectors.forEach(sel => {
-      shopScene.querySelectorAll(sel).forEach(el => el.classList.add('hidden-brawlidays'));
-    });
+    selectors.forEach(sel => { shopScene.querySelectorAll(sel).forEach(el => el.classList.add('hidden-brawlidays')); });
   }
 
   function getShopContainer(shopScene) {
     let container = shopScene.querySelector('.shop-items, .skins-grid, .items-grid, .shop-grid, .shop-content');
-    if (!container) {
-      const allDivs = shopScene.querySelectorAll('div');
-      for (const div of allDivs) {
-        if (div.children.length >= 2) { container = div; break; }
-      }
-    }
+    if (!container) { const allDivs = shopScene.querySelectorAll('div'); for (const div of allDivs) { if (div.children.length >= 2) { container = div; break; } } }
     return container || shopScene;
   }
 
-  // ============================================================
-  // ДОДАВАННЯ ТОВАРІВ У МАГАЗИН
-  // ============================================================
   function injectShopOffers() {
     const shopScene = document.getElementById('shop-scene');
     if (!shopScene) return;
     const container = getShopContainer(shopScene);
     if (document.getElementById('custom-pin-pack')) return;
-
     const pinPackCard = document.createElement('div');
     pinPackCard.id = 'custom-pin-pack';
-    pinPackCard.style.cssText = `
-      display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-      background: linear-gradient(160deg, #2b114c 0%, #4a1f80 60%, #2b114c 100%);
-      border: 3px solid #9c27b0; border-radius: 14px; padding: 8px; cursor: pointer; min-width: 90px; min-height: 110px;
-    `;
-    pinPackCard.innerHTML = `
-      <div style="position:absolute; top:4px; left:4px; background:#9c27b0; color:#fff; font-size:9px; font-weight:900; padding:2px 6px; border-radius:8px;">EPIC</div>
-      <img src="Img/pin_pack_icon.png" style="width:65px; height:65px; object-fit:contain; margin-bottom:4px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/744/744922.png';">
-      <div style="color:#fff; font-size:11px; font-weight:700; text-align:center; margin-bottom:4px;">✨ Набір значків</div>
-      <div style="background:linear-gradient(to bottom,#9c27b0,#673ab7); color:#fff; font-size:12px; font-weight:800; padding:4px 10px; border-radius:8px; display:flex; align-items:center; gap:4px;">19 <img src="Img/gem.png" style="width:14px;height:14px;"></div>
-    `;
+    pinPackCard.style.cssText = `display: flex; flex-direction: column; align-items: center; justify-content: flex-end; background: linear-gradient(160deg, #2b114c 0%, #4a1f80 60%, #2b114c 100%); border: 3px solid #9c27b0; border-radius: 14px; padding: 8px; cursor: pointer; min-width: 90px; min-height: 110px;`;
+    pinPackCard.innerHTML = `<div style="position:absolute; top:4px; left:4px; background:#9c27b0; color:#fff; font-size:9px; font-weight:900; padding:2px 6px; border-radius:8px;">EPIC</div><img src="Img/pin_pack_icon.png" style="width:65px; height:65px; object-fit:contain; margin-bottom:4px;" onerror="this.src='https://cdn-icons-png.flaticon.com/512/744/744922.png';"><div style="color:#fff; font-size:11px; font-weight:700; text-align:center; margin-bottom:4px;">✨ Набір значків</div><div style="background:linear-gradient(to bottom,#9c27b0,#673ab7); color:#fff; font-size:12px; font-weight:800; padding:4px 10px; border-radius:8px; display:flex; align-items:center; gap:4px;">19 <img src="Img/gem.png" style="width:14px;height:14px;"></div>`;
     pinPackCard.onclick = buyPinPack;
-
     const crowCard = document.createElement('div');
     crowCard.id = 'custom-skin-crow';
     crowCard.style.cssText = pinPackCard.style.cssText.replace(/#9c27b0/g, '#4a86e8').replace(/#2b114c/g, '#0a1a2e').replace(/#4a1f80/g, '#0a2a4a');
-    crowCard.innerHTML = `
-      <div style="position:absolute; top:4px; left:4px; background:#ff0000; color:#fff; font-size:9px; font-weight:900; padding:2px 6px; border-radius:8px;">NEW</div>
-      <img src="Img/crow_maverick.png" style="width:65px; height:65px; object-fit:contain; margin-bottom:4px;" onerror="this.style.opacity='0.5'">
-      <div style="color:#fff; font-size:11px; font-weight:700; text-align:center; margin-bottom:4px;">🤠 Мейверік Кроу</div>
-      <div style="background:linear-gradient(to bottom,#4a86e8,#2a5ab8); color:#fff; font-size:12px; font-weight:800; padding:4px 10px; border-radius:8px; display:flex; align-items:center; gap:4px;">49 <img src="Img/gem.png" style="width:14px;height:14px;"></div>
-    `;
+    crowCard.innerHTML = `<div style="position:absolute; top:4px; left:4px; background:#ff0000; color:#fff; font-size:9px; font-weight:900; padding:2px 6px; border-radius:8px;">NEW</div><img src="Img/crow_maverick.png" style="width:65px; height:65px; object-fit:contain; margin-bottom:4px;" onerror="this.style.opacity='0.5'"><div style="color:#fff; font-size:11px; font-weight:700; text-align:center; margin-bottom:4px;">🤠 Мейверік Кроу</div><div style="background:linear-gradient(to bottom,#4a86e8,#2a5ab8); color:#fff; font-size:12px; font-weight:800; padding:4px 10px; border-radius:8px; display:flex; align-items:center; gap:4px;">49 <img src="Img/gem.png" style="width:14px;height:14px;"></div>`;
     crowCard.onclick = () => confirmPurchase('crow', 'Мейверік Кроу', 49, 'Img/crow_maverick.png');
-
     container.insertBefore(crowCard, container.firstChild);
     container.insertBefore(pinPackCard, container.firstChild);
   }
 
   function confirmPurchase(skinId, skinName, price, imgUrl) {
-    if (confirm(`${skinName}\n\n💰 Ціна: ${price} кристалів\n\nПридбати цей скін?`)) {
-      if (spendGems(price)) {
-        alert(`✅ Скін "${skinName}" успішно додано до колекції! Баланс оновлено.`);
-      }
-    }
+    if (confirm(`${skinName}\n\n💰 Ціна: ${price} кристалів\n\nПридбати цей скін?`)) { if (spendGems(price)) { alert(`✅ Скін "${skinName}" успішно додано до колекції! Баланс оновлено.`); } }
   }
 
   function initSkinOfferGridInline() {
@@ -546,91 +396,47 @@
     if (!shopScene) return;
     const container = getShopContainer(shopScene);
     if (document.getElementById('custom-skin-offer-banner')) return;
-
     const bannerWrapper = document.createElement('div');
     bannerWrapper.id = 'custom-skin-offer-banner';
+    // ТУТ ДОДАНО ID ДЛЯ АВТО-ВИДАЛЕННЯ
     bannerWrapper.innerHTML = `
-      <div class="skin-offer-container">
-        <div class="offer-header">
-          <span class="offer-title">⚡ Спецпропозиція</span>
-          <span class="new-badge">NEW</span>
-        </div>
-        <div class="offer-content">
-          <img src="Img/bull_kansai_dragon_bull_001.png" class="skin-preview-large" onerror="this.style.opacity='0.5'">
-          <div class="offer-details">
-            <div class="skin-name">🐉 Кансай Дракон Булл</div>
-            <div class="timer-section">
-              <div class="timer-label">⏰ До кінця акції:</div>
-              <div class="countdown">
-                <div class="countdown-item" id="ch-hours">23</div><div class="countdown-sep">:</div>
-                <div class="countdown-item" id="ch-minutes">59</div><div class="countdown-sep">:</div>
-                <div class="countdown-item" id="ch-seconds">59</div>
-              </div>
-            </div>
-            <button class="buy-btn" id="offer-buy-btn">🔥 Купити за 29 <img src="Img/gem.png"></button>
-          </div>
-        </div>
+      <div class="skin-offer-container" style="margin-bottom: 15px;">
+        <div class="offer-header"><span class="offer-title">⚡ Спецпропозиція</span><span class="new-badge">NEW</span></div>
+        <div class="offer-content"><img src="Img/bull_kansai_dragon_bull_001.png" class="skin-preview-large" onerror="this.style.opacity='0.5'"><div class="offer-details"><div class="skin-name">🐉 Кансай Дракон Булл</div><div class="timer-section"><div class="timer-label">⏰ До кінця акції:</div><div class="countdown"><div class="countdown-item" id="ch-hours">23</div><div class="countdown-sep">:</div><div class="countdown-item" id="ch-minutes">59</div><div class="countdown-sep">:</div><div class="countdown-item" id="ch-seconds">59</div></div></div><button class="buy-btn" id="offer-buy-btn">🔥 Купити за 29 <img src="Img/gem.png"></button></div></div>
+      </div>
+      
+      <div class="skin-offer-container" id="gale-offer-container" style="margin-top: 5px;">
+        <div class="offer-header"><span class="offer-title">🌌 Космічна пропозиція</span><span class="new-badge">НОВИЙ</span></div>
+        <div class="offer-content"><img src="Img/gale_galactic_gale_001.png" class="skin-preview-large" onerror="this.style.opacity='0.5'"><div class="offer-details"><div class="skin-name">🌠 Галактичний Гейл</div><div style="background: rgba(0,0,0,0.4); border-radius: 8px; padding: 6px; margin-bottom: 6px;"><div style="color: #ccc; font-size: 10px; text-transform: uppercase; text-align: center;">Обмежена пропозиція</div></div><button class="buy-btn" id="offer-buy-btn-gale">🔥 Купити за 29 <img src="Img/gem.png"></button></div></div>
       </div>
     `;
-
     container.insertBefore(bannerWrapper, container.firstChild);
     const buyBtn = bannerWrapper.querySelector('#offer-buy-btn');
-    if (buyBtn) {
-      buyBtn.onclick = () => confirmPurchase('bull', 'Кансай Дракон Булл', 29, 'Img/bull_kansai_dragon_bull_001.png');
-    }
-
+    if (buyBtn) { buyBtn.onclick = () => confirmPurchase('bull', 'Кансай Дракон Булл', 29, 'Img/bull_kansai_dragon_bull_001.png'); }
+    const buyBtnGale = bannerWrapper.querySelector('#offer-buy-btn-gale');
+    if (buyBtnGale) { buyBtnGale.onclick = () => confirmPurchase('gale', 'Галактичний Гейл', 29, 'Img/gale_galactic_gale_001.png'); }
     setInterval(() => {
-      const now = new Date();
-      const h = String(23 - now.getHours()).padStart(2, '0');
-      const m = String(59 - now.getMinutes()).padStart(2, '0');
-      const s = String(59 - now.getSeconds()).padStart(2, '0');
-      const elH = document.getElementById('ch-hours');
-      const elM = document.getElementById('ch-minutes');
-      const elS = document.getElementById('ch-seconds');
+      const now = new Date(); const h = String(23 - now.getHours()).padStart(2, '0'); const m = String(59 - now.getMinutes()).padStart(2, '0'); const s = String(59 - now.getSeconds()).padStart(2, '0');
+      const elH = document.getElementById('ch-hours'); const elM = document.getElementById('ch-minutes'); const elS = document.getElementById('ch-seconds');
       if (elH && elM && elS) { elH.textContent = h; elM.textContent = m; elS.textContent = s; }
     }, 1000);
   }
 
-  // ============================================================
-  // СИСТЕМА ЗНАЧКІВ
-  // ============================================================
-  const availablePins = [
-    { id: "pin_juice", name: "Пін Сік (Carreta Juice)", img: "Img/emoji_carreta_juice.png" },
-    { id: "pin_classic_small", name: "Маленький Класичний Пін", img: "Img/classic_box_small_pin.png" },
-    { id: "pin_classic_mega", name: "Мега Класичний Пін", img: "Img/classic_box_mega_pin.png" }
-  ];
+  const availablePins = [ { id: "pin_juice", name: "Пін Сік (Carreta Juice)", img: "Img/emoji_carreta_juice.png" }, { id: "pin_classic_small", name: "Маленький Класичний Пін", img: "Img/classic_box_small_pin.png" }, { id: "pin_classic_mega", name: "Мега Класичний Пін", img: "Img/classic_box_mega_pin.png" } ];
 
   function initPinDropOverlay() {
     if (document.getElementById('pin-drop-overlay')) return;
-    document.body.insertAdjacentHTML('beforeend', `
-      <div id="pin-drop-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 10000; color: #fff; text-align: center;">
-        <div style="background: linear-gradient(135deg, #2b1055, #752201); border: 4px solid #ffd700; border-radius: 24px; padding: 30px; max-width: 320px; width: 85%; box-shadow: 0 0 30px #ffd700;">
-          <h2 style="color: #ffd700; font-size: 24px; text-shadow: 2px 2px #000;">ВИПАВ ПІН!</h2>
-          <img id="dropped-pin-img" src="" style="width: 120px; height: 120px; object-fit: contain; margin: 15px 0;">
-          <h3 id="dropped-pin-name" style="font-size: 18px; margin-bottom: 10px;">Назва піна</h3>
-          <button style="background: #ffcc00; color: #000; border: none; font-weight: 900; padding: 10px 24px; border-radius: 12px; font-size: 16px; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 0 #b38f00;" onclick="closePinDrop()">ЗАБРАТИ</button>
-        </div>
-      </div>
-    `);
+    document.body.insertAdjacentHTML('beforeend', `<div id="pin-drop-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: none; align-items: center; justify-content: center; flex-direction: column; z-index: 10000; color: #fff; text-align: center;"><div style="background: linear-gradient(135deg, #2b1055, #752201); border: 4px solid #ffd700; border-radius: 24px; padding: 30px; max-width: 320px; width: 85%; box-shadow: 0 0 30px #ffd700;"><h2 style="color: #ffd700; font-size: 24px; text-shadow: 2px 2px #000;">ВИПАВ ПІН!</h2><img id="dropped-pin-img" src="" style="width: 120px; height: 120px; object-fit: contain; margin: 15px 0;"><h3 id="dropped-pin-name" style="font-size: 18px; margin-bottom: 10px;">Назва піна</h3><button style="background: #ffcc00; color: #000; border: none; font-weight: 900; padding: 10px 24px; border-radius: 12px; font-size: 16px; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 0 #b38f00;" onclick="closePinDrop()">ЗАБРАТИ</button></div></div>`);
   }
 
   function buyPinPack() {
     if (confirm("✨ Придбати Набір значків (Пін Пак) за 19 кристалів?")) {
       if (!spendGems(19)) return;
-
-      const randomIndex = Math.floor(Math.random() * availablePins.length);
-      const reward = availablePins[randomIndex];
+      const randomIndex = Math.floor(Math.random() * availablePins.length); const reward = availablePins[randomIndex];
       let unlockedPins = JSON.parse(localStorage.getItem('game_unlocked_pins')) || [];
-      if (!unlockedPins.includes(reward.id)) {
-        unlockedPins.push(reward.id);
-        localStorage.setItem('game_unlocked_pins', JSON.stringify(unlockedPins));
-      }
+      if (!unlockedPins.includes(reward.id)) { unlockedPins.push(reward.id); localStorage.setItem('game_unlocked_pins', JSON.stringify(unlockedPins)); }
       const overlay = document.getElementById('pin-drop-overlay');
-      if (overlay) {
-        document.getElementById('dropped-pin-img').src = reward.img;
-        document.getElementById('dropped-pin-name').textContent = reward.name;
-        overlay.style.display = 'flex';
-      }
+      if (overlay) { document.getElementById('dropped-pin-img').src = reward.img; document.getElementById('dropped-pin-name').textContent = reward.name; overlay.style.display = 'flex'; }
       renderPinsGallery();
     }
   }
@@ -639,25 +445,13 @@
 
   function initPinsMenuSystem() {
     const charScene = document.getElementById('characters-scene');
-    if (!charScene) {
-      setTimeout(initPinsMenuSystem, 300);
-      return;
-    }
+    if (!charScene) { setTimeout(initPinsMenuSystem, 300); return; }
     if (document.getElementById('custom-pins-tabs')) return;
-
     const navBar = document.createElement('div');
-    navBar.id = 'custom-pins-tabs';
-    navBar.className = 'pins-tab-container';
-    navBar.innerHTML = `
-      <button id="pins-tab-brawlers" class="pins-tab-btn active" onclick="switchCharSceneTab('brawlers')">Бійці</button>
-      <button id="pins-tab-pins" class="pins-tab-btn" onclick="switchCharSceneTab('pins')">Значки</button>
-    `;
-    const pinsGrid = document.createElement('div');
-    pinsGrid.id = 'custom-pins-grid';
-
-    charScene.appendChild(navBar);
-    charScene.appendChild(pinsGrid);
-    renderPinsGallery();
+    navBar.id = 'custom-pins-tabs'; navBar.className = 'pins-tab-container';
+    navBar.innerHTML = `<button id="pins-tab-brawlers" class="pins-tab-btn active" onclick="switchCharSceneTab('brawlers')">Бійці</button><button id="pins-tab-pins" class="pins-tab-btn" onclick="switchCharSceneTab('pins')">Значки</button>`;
+    const pinsGrid = document.createElement('div'); pinsGrid.id = 'custom-pins-grid';
+    charScene.appendChild(navBar); charScene.appendChild(pinsGrid); renderPinsGallery();
   }
 
   function renderPinsGallery() {
@@ -667,51 +461,35 @@
     const unlockedPins = JSON.parse(localStorage.getItem('game_unlocked_pins')) || [];
     availablePins.forEach(pin => {
       const isUnlocked = unlockedPins.includes(pin.id);
-      const card = document.createElement('div');
-      card.className = `pin-card ${isUnlocked ? '' : 'locked'}`;
-      card.innerHTML = `
-        <img src="${pin.img}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/744/744922.png';">
-        <div class="pin-title">${pin.name}</div>
-        ${!isUnlocked ? '<div class="lock-overlay">🔒</div>' : ''}
-      `;
+      const card = document.createElement('div'); card.className = `pin-card ${isUnlocked ? '' : 'locked'}`;
+      card.innerHTML = `<img src="${pin.img}" onerror="this.src='https://cdn-icons-png.flaticon.com/512/744/744922.png';"><div class="pin-title">${pin.name}</div>${!isUnlocked ? '<div class="lock-overlay">🔒</div>' : ''}`;
       grid.appendChild(card);
     });
   }
 
   function switchCharSceneTab(target) {
-    const charScene = document.getElementById('characters-scene');
-    const brawlersBtn = document.getElementById('pins-tab-brawlers');
-    const pinsBtn = document.getElementById('pins-tab-pins');
-    const pinsGrid = document.getElementById('custom-pins-grid');
+    const charScene = document.getElementById('characters-scene'); const brawlersBtn = document.getElementById('pins-tab-brawlers'); const pinsBtn = document.getElementById('pins-tab-pins'); const pinsGrid = document.getElementById('custom-pins-grid');
     if (!charScene) return;
-
     if (target === 'pins') {
-      brawlersBtn.classList.remove('active');
-      pinsBtn.classList.add('active');
-      pinsGrid.style.display = 'grid';
+      brawlersBtn.classList.remove('active'); pinsBtn.classList.add('active'); pinsGrid.style.display = 'grid';
       Array.from(charScene.children).forEach(child => {
         if (child.id !== 'custom-pins-tabs' && child.id !== 'custom-pins-grid') {
-          if (child.textContent.includes('Назад') || child.id.toLowerCase().includes('back') || child.className.toLowerCase().includes('back')) {
-            child.style.display = ''; 
-          } else {
-            child.style.setProperty('display', 'none', 'important'); 
-          }
+          if (child.textContent.includes('Назад') || child.id.toLowerCase().includes('back') || child.className.toLowerCase().includes('back')) { child.style.display = ''; } else { child.style.setProperty('display', 'none', 'important'); }
         }
-      });
-      renderPinsGallery();
+      }); renderPinsGallery();
     } else {
-      pinsBtn.classList.remove('active');
-      brawlersBtn.classList.add('active');
-      pinsGrid.style.display = 'none';
+      pinsBtn.classList.remove('active'); brawlersBtn.classList.add('active'); pinsGrid.style.display = 'none';
       Array.from(charScene.children).forEach(child => {
         if (child.id !== 'custom-pins-tabs' && child.id !== 'custom-pins-grid') { child.style.display = ''; }
       });
     }
   }
 
-  window.buyPinPack = buyPinPack;
-  window.closePinDrop = closePinDrop;
-  window.switchCharSceneTab = switchCharSceneTab;
+  window.buyPinPack = buyPinPack; window.closePinDrop = closePinDrop; window.switchCharSceneTab = switchCharSceneTab; window.showSlotRewards = showSlotRewards;
 </script>
+
+<!-- ПІДКЛЮЧАЄМО ЗОВНІШНІЙ ФАЙЛ З ЛОГІКОЮ BRAWL PASS -->
+<script src="bp_season.js"></script>
+
 </body>
 </html>
